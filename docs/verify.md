@@ -78,6 +78,7 @@ Run in the desktop app after `claude plugin update agentzero@agentzero --scope l
 | 2. The Memory pane: count, order (newest first), your words, `in hot set` | | |
 | 3. Forget one: the card goes grey; its YAML file says `status: retired`; the band count drops by one | | |
 | 4. Ask which Fact was just forgotten: the assistant knows | | |
+| 4b. Forget another, run `/compact`, then ask again: the assistant still knows (the note comes with the reloaded hot set) | | |
 | 5. Keep an item in the Review pane: on the next message the assistant knows | | |
 | 6. Close and reopen the Memory pane: the forgotten row is gone | | |
 | 7. Screenshot saved as `docs/hud/memory-pane.png` | | |
