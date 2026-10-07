@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.0-rc.2 — kernel 0.4.7 (333cd6e)
+
+- `Forget` and `Cancel` in the Memory pane work on the first click. The desktop app drew a write of the pane's own state one press late, so each needed two clicks; they now refresh the snapshot as `✗ Forget` and the Review pane's buttons do.
+
 ## 1.2.0-rc.1 — kernel 0.4.7 (333cd6e)
 
 - **The Memory pane.** `Memory` on the band, or `/agentzero memory`, opens a pane of the active Facts, newest first: each with the operator's words (or "Inferred by the assistant, kept by you"), the date, and tags for the hot set and for task scope. `Forget`, then `✗ Forget` to confirm, runs the kernel's `memory forget`; a forgotten Fact stays listed, struck through, until the pane closes, and a Skill that cites it is named.

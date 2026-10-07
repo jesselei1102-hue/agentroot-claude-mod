@@ -170,8 +170,26 @@ export function registerHud(on: On): void {
     const { rows, active, inHotSet, forgotten, hidden } = memoryRows(hud.snapshot.facts, await read($, memoryResultsAtom))
     if (rows.length === 0) return <Text color={MUTED}>No Facts yet.</Text>
 
-    const ask = (fact: Fact) => update($, memoryResultsAtom, m => mergeMemory(m, { fact, outcome: 'confirming', message: '', citedBy: [] }))
-    const cancel = (fact: Fact) => update($, memoryResultsAtom, m => cancelForget(m, fact.id))
+    const refresh = () => {
+      const io: HudIo = {
+        run: (argv, init) => $.process.run(argv, init),
+        read: p => $.fs.read(p) as Promise<string>,
+        write: fn => update($, hudAtom, fn),
+        status: t => $.ui.status(t),
+        pluginRoot: $.plugin.root,
+      }
+      return data.gate.run(refreshJob(io, workspace))
+    }
+    // The desktop app drew a write of this pane's own state one press late (lab, 2026-10-08);
+    // the refresh's later write draws it, as it does for the presses that run the kernel.
+    const ask = async (fact: Fact) => {
+      await update($, memoryResultsAtom, m => mergeMemory(m, { fact, outcome: 'confirming', message: '', citedBy: [] }))
+      await refresh()
+    }
+    const cancel = async (fact: Fact) => {
+      await update($, memoryResultsAtom, m => cancelForget(m, fact.id))
+      await refresh()
+    }
     const forget = async (fact: Fact) => {
       let ran
       try {
@@ -184,14 +202,7 @@ export function registerHud(on: On): void {
       if (result.outcome === 'forgotten') {
         await update($, paneNotesAtom, notes => [...notes, { verb: 'forgot', kind: 'fact', sentence: fact.sentence }])
       }
-      const io: HudIo = {
-        run: (argv, init) => $.process.run(argv, init),
-        read: p => $.fs.read(p) as Promise<string>,
-        write: fn => update($, hudAtom, fn),
-        status: t => $.ui.status(t),
-        pluginRoot: $.plugin.root,
-      }
-      await data.gate.run(refreshJob(io, workspace))
+      await refresh()
     }
     const buttons = (row: MemoryRow) => {
       const id = row.fact.id

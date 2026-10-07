@@ -75,8 +75,8 @@ test('forget runs the kernel and keeps the row', async ($, on) => {
   w.responder = () => ({ exitCode: 0, stdout: 'forgot: fact:a — Never deploy on Fridays.\n' })
   await $.session.start(START)
   const ui = await mount($)
-  w.snapshotJson = json([B])
   await ui.press({ key: 'az-forget-fact:a' })
+  w.snapshotJson = json([B])
   await ui.press({ key: 'az-forget-yes-fact:a' })
   expect(w.runs.at(-1)).toEqual({ argv: ['/w/a0', 'memory', 'forget', 'fact:a'], init: { cwd: '/w', timeoutMs: 10000 } })
   const svgs = await sources(ui)
@@ -135,4 +135,19 @@ test('the pane with no snapshot or no workspace', async ($, on) => {
 test('the pane outside a workspace', async ($, on) => {
   world(on, { existing: [] })
   expect(await (await mount($)).find({ text: 'This is not an AgentZero workspace.' })).toBeDefined()
+})
+
+// The desktop app drew a pane-only write one press late (lab, 2026-10-08): Forget and Cancel each
+// needed two clicks, while ✗ Forget, which also refreshes the snapshot, needed one. So they refresh too.
+test('Forget and Cancel refresh like the presses that run the kernel', async ($, on) => {
+  const w = world(on)
+  w.snapshotJson = json([A, B])
+  await $.session.start(START)
+  const ui = await mount($)
+  const before = w.snapshotRuns.length
+  await ui.press({ key: 'az-forget-fact:a' })
+  expect(w.snapshotRuns.length).toBe(before + 1)
+  await ui.press({ key: 'az-forget-no-fact:a' })
+  expect(w.snapshotRuns.length).toBe(before + 2)
+  expect(w.runs).toEqual([])
 })
