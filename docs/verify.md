@@ -67,3 +67,17 @@ Findings about the desktop app (probes `az-probe`, `az-probe2`, `az-mock`, 2026-
 - Earlier finding corrected: item 3 above holds for the terminal only; the desktop runs the cached copy.
 
 The lab workspace was reset afterwards at the operator's request: the old one is kept as `~/Documents/AgentZero-Claude-Lab.bak-20261006`; the new one was made with the plugin's kernel 0.4.7.
+
+## Memory pane acceptance in the lab workspace (plugin 1.2.0-rc.1)
+
+Run in the desktop app after `claude plugin update agentzero@agentzero --scope local` and an app restart.
+
+| By-hand step | Seen | Result |
+|---|---|---|
+| 1. The assistant remembers two or three throwaway Facts (not the "reply in English" one) | | |
+| 2. The Memory pane: count, order (newest first), your words, `in hot set` | | |
+| 3. Forget one: the card goes grey; its YAML file says `status: retired`; the band count drops by one | | |
+| 4. Ask which Fact was just forgotten: the assistant knows | | |
+| 5. Keep an item in the Review pane: on the next message the assistant knows | | |
+| 6. Close and reopen the Memory pane: the forgotten row is gone | | |
+| 7. Screenshot saved as `docs/hud/memory-pane.png` | | |

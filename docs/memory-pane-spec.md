@@ -1,4 +1,4 @@
-Status: written 2026-10-08 from the operator's answers of 2026-10-07; waiting for the operator's review.
+Status: approved by the operator 2026-10-08; implemented in 1.2.0-rc.1; acceptance in the lab pending.
 
 # Spec: the Memory pane (plugin 1.2, sub-project D)
 

@@ -123,6 +123,7 @@ To see the proposed Facts, run `./a0 memory review` in your project folder. You 
 | `/agentzero upgrade` | Updates the project to the AgentZero version in this plugin. It does not overwrite a framework file that you changed. It shows what stopped it. |
 | `/agentzero status` | Shows if the project can run. Shows the plugin version and the AgentZero version. |
 | `/agentzero review` | Opens the pane of what waits for your yes (see below). |
+| `/agentzero memory` | Opens the pane of the Facts the assistant applies (see below). |
 
 ### 4. You can see the memory
 
@@ -132,6 +133,8 @@ A band above the prompt shows the state of the memory at all times:
 
 - **The band** shows how many Facts are active, how many wait for your yes, when the hot set was last loaded, and how much of the conversation space is used. When the hot set cannot be loaded, its pill turns red and says why.
 - **The pane.** When something waits, the band shows a button, `Review`. It opens a pane at the side. Each item has two buttons: `✓ Keep` and `✗ Reject`. The plugin runs AgentZero's own `review` command for you, and the band count changes.
+- **The Memory pane.** The band also has a button, `Memory`. It opens a pane with every active Fact, newest first, and the words you said when it was saved. To remove a Fact that is wrong or out of date, press `Forget`, then `✗ Forget`. The plugin runs AgentZero's own `forget` command. Nothing is deleted: AgentZero keeps the file and marks the Fact retired.
+- **The assistant is told.** When you keep, reject or forget something in a pane, the plugin tells the assistant with your next message. It does not keep using a Fact you removed.
 - **The cards.** When the assistant writes to the memory, the command shows as a card: green when a Fact is saved with your words, amber when it waits for your yes, blue when the assistant uses a skill.
 
 ## Limits
