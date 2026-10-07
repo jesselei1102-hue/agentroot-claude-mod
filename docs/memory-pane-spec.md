@@ -128,8 +128,8 @@ Card states:
   ```
 
   Only the lines with entries are written.
-- When the same prompt loads a fresh hot set, the queue is emptied and no note is added: the hot set already reflects the change.
-- If the hot set load on that prompt fails, the note is added as usual.
+- The note is added even when the same prompt loads a fresh hot set: the earlier hot set, or a compaction summary, can still hold a Fact the operator forgot (amended 2026-10-08 after the branch review).
+- Only the entries read for the note leave the queue, so a change made while the prompt is handled waits for the next one.
 
 ### Terminal
 
@@ -160,7 +160,7 @@ The rule from A holds: a failure never blocks work, and the pane never claims "n
 
 - **pytest** (`tests/test_snapshot.py`), against a workspace made by the pinned kernel: two remembered Facts come newest first with every field; a proposed Fact that is then confirmed has `author` `agent` and `said` `null`; `inHotSet` after a hot-set load; proposed and retired Facts are absent; `active == len(facts)`; Chinese is kept as is.
 - **Unit:** `memory.ts` for confirm, cancel, success, failure, a forgotten row kept after it leaves the snapshot, a failure not replacing a forget, the 200 cap, the skill citation, and the forget argv; `notes.ts` for the note text and its empty case; `snapshot.ts` for a readable, missing and malformed `facts`; `svg.ts` for the header chips and each card state; `band.ts` for `showMemory`.
-- **Engine** (`$.ui.mount`, desktop and terminal): the five states of the error table; two presses run the right `forget` command with the kernel mocked, for success and for failure; the band's Memory button opens the pane; `/agentzero memory` opens it; a forget, a keep and a reject each put a note on the next prompt and not on the one after; no note on a prompt that loads the hot set.
+- **Engine** (`$.ui.mount`, desktop and terminal): the five states of the error table; two presses run the right `forget` command with the kernel mocked, for success and for failure; the band's Memory button opens the pane; `/agentzero memory` opens it; a forget, a keep and a reject each put a note on the next prompt and not on the one after; a prompt that loads the hot set still carries the note.
 - **By hand, in the lab workspace** (the test kit cannot raise `ui.close`):
   1. Have the assistant remember two or three throwaway Facts. Do not use the "reply in English" Fact: forgetting it changes how the lab works.
   2. Open the Memory pane: count, order, words and `in hot set` are right.

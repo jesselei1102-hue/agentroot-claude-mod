@@ -69,7 +69,8 @@ test('a failed press adds no note', async ($, on) => {
   expect(last(w)).not.toContain(NOTE)
 })
 
-test('no note on a prompt that loads the hot set', async ($, on) => {
+// The old hot set, or a compaction summary, can still hold the forgotten Fact: say so even then.
+test('a prompt that loads the hot set still carries the note', async ($, on) => {
   const w = world(on)
   kernel(w, { exitCode: 0, stdout: 'forgot: fact:x — Never deploy on Fridays.\n' })
   await $.session.start(START)
@@ -78,7 +79,7 @@ test('no note on a prompt that loads the hot set', async ($, on) => {
   await $.session.compact({ trigger: 'manual', messages: [MSG] })
   await $.prompt.submit(PROMPT('two'))
   expect(last(w)).toContain(HOT)
-  expect(last(w)).not.toContain(NOTE)
+  expect(last(w)).toContain('Forgotten, stop applying: "Never deploy on Fridays."')
   await $.prompt.submit(PROMPT('three'))
   expect(last(w)).not.toContain(NOTE)
 })

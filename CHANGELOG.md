@@ -3,7 +3,7 @@
 ## 1.2.0-rc.1 — kernel 0.4.7 (333cd6e)
 
 - **The Memory pane.** `Memory` on the band, or `/agentzero memory`, opens a pane of the active Facts, newest first: each with the operator's words (or "Inferred by the assistant, kept by you"), the date, and tags for the hot set and for task scope. `Forget`, then `✗ Forget` to confirm, runs the kernel's `memory forget`; a forgotten Fact stays listed, struck through, until the pane closes, and a Skill that cites it is named.
-- **The assistant is told.** After a forget in the Memory pane, or a keep or reject in the Review pane, the next message carries a note to the assistant (not shown to the operator) listing what changed. A message that loads a fresh hot set carries no note: the hot set already reflects it.
+- **The assistant is told.** After a forget in the Memory pane, or a keep or reject in the Review pane, the next message carries a note to the assistant (not shown to the operator) listing what changed. The note is sent even when that message loads a fresh hot set, because the earlier hot set or a compaction summary can still hold the forgotten Fact.
 - `tools/snapshot.py` adds the list of active Facts; the band's active count is its length.
 
 ## 1.1.0-rc.4 — kernel 0.4.7 (333cd6e)

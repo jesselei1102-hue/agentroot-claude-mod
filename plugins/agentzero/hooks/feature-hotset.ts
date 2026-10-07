@@ -71,13 +71,11 @@ export function registerHotSet(on: On): void {
     if (workspace === null) return next(e)
 
     let out = e
-    let fresh = false
     if (needsHotSet(data.inject, now)) {
       const loaded = await loadHotSet(workspace, e.text, exists, (argv, init) => $.process.run(argv, init))
       if (loaded.ok) {
         data.inject = { lastAt: now, resetSince: false }
         out = { ...e, context: [...(e.context ?? []), hotSetContext(loaded.output, localTime(now))] }
-        fresh = true
         await update($, hotSetErrorAtom, () => null)
       } else {
         // the desktop app draws no status row, so the message also goes to a toast
@@ -88,10 +86,14 @@ export function registerHotSet(on: On): void {
       }
     }
 
-    // A fresh hot set already reflects what changed in the panes; otherwise tell the assistant.
-    const note = fresh ? null : paneNoteText(await read($, paneNotesAtom))
-    if (note !== null) out = { ...out, context: [...(out.context ?? []), note] }
-    if (fresh || note !== null) await update($, paneNotesAtom, () => [])
+    // Tell the assistant even with a fresh hot set: the old one, or a compaction summary, can
+    // still hold a Fact the operator just forgot. Drop only the entries read, not any added since.
+    const notes = await read($, paneNotesAtom)
+    const note = paneNoteText(notes)
+    if (note !== null) {
+      out = { ...out, context: [...(out.context ?? []), note] }
+      await update($, paneNotesAtom, q => q.slice(notes.length))
+    }
 
     const result = await next(out)
     const io: HudIo = {
