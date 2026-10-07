@@ -94,7 +94,7 @@ export function registerCommand(on: On): void {
 
     if ((sub === 'review' || sub === 'memory') && workspace !== null) {
       const review = sub === 'review'
-      await $.ui.open(review ? { id: REVIEW_PANE, title: REVIEW_TITLE } : { id: MEMORY_PANE, title: MEMORY_TITLE })
+      await $.ui.open({ ...(review ? { id: REVIEW_PANE, title: REVIEW_TITLE } : { id: MEMORY_PANE, title: MEMORY_TITLE }), focus: true })
       const data = sessionData(await $.session.id())
       const io: HudIo = {
         run: (argv, init) => $.process.run(argv, init),

@@ -137,17 +137,17 @@ test('the pane outside a workspace', async ($, on) => {
   expect(await (await mount($)).find({ text: 'This is not an AgentZero workspace.' })).toBeDefined()
 })
 
-// The desktop app drew a pane-only write one press late (lab, 2026-10-08): Forget and Cancel each
-// needed two clicks, while ✗ Forget, which also refreshes the snapshot, needed one. So they refresh too.
-test('Forget and Cancel refresh like the presses that run the kernel', async ($, on) => {
+// A click into a pane gives it the keyboard; that redraw retires the button handles, so the
+// click's press runs nothing (desktop log: "ui_press not handled", lab 2026-10-08). A pane
+// opened with the keyboard is not redrawn by the first click.
+test('every way of opening a pane asks for the keyboard', async ($, on) => {
   const w = world(on)
-  w.snapshotJson = json([A, B])
   await $.session.start(START)
-  const ui = await mount($)
-  const before = w.snapshotRuns.length
-  await ui.press({ key: 'az-forget-fact:a' })
-  expect(w.snapshotRuns.length).toBe(before + 1)
-  await ui.press({ key: 'az-forget-no-fact:a' })
-  expect(w.snapshotRuns.length).toBe(before + 2)
-  expect(w.runs).toEqual([])
+  await $.command.run({ command: 'agentzero', args: 'memory' })
+  await $.command.run({ command: 'agentzero', args: 'review' })
+  const band = await $.ui.mount({ plugin: 'agentzero', surface: 'desktop', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 120, scroll: { offset: 0, bodyRows: 10 }, view: {} } })
+  await band.press({ key: 'az-memory' })
+  await band.press({ key: 'az-review' })
+  expect(w.opened).toEqual(['agentzero-memory', 'agentzero-review', 'agentzero-memory', 'agentzero-review'])
+  expect(w.openFocus).toEqual([true, true, true, true])
 })

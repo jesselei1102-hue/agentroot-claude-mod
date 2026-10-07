@@ -45,7 +45,8 @@ export function registerHud(on: On): void {
     }
     const m = bandModel(await read($, hudAtom), await read($, hotSetErrorAtom), percent, await $.clock.now())
     const openPane = async (id: string, title: string) => {
-      await $.ui.open({ id, title })
+      // with the keyboard: a first click that moves it into the pane redraws it and is lost
+      await $.ui.open({ id, title, focus: true })
       const io: HudIo = {
         run: (argv, init) => $.process.run(argv, init),
         read: p => $.fs.read(p) as Promise<string>,
@@ -180,16 +181,8 @@ export function registerHud(on: On): void {
       }
       return data.gate.run(refreshJob(io, workspace))
     }
-    // The desktop app drew a write of this pane's own state one press late (lab, 2026-10-08);
-    // the refresh's later write draws it, as it does for the presses that run the kernel.
-    const ask = async (fact: Fact) => {
-      await update($, memoryResultsAtom, m => mergeMemory(m, { fact, outcome: 'confirming', message: '', citedBy: [] }))
-      await refresh()
-    }
-    const cancel = async (fact: Fact) => {
-      await update($, memoryResultsAtom, m => cancelForget(m, fact.id))
-      await refresh()
-    }
+    const ask = (fact: Fact) => update($, memoryResultsAtom, m => mergeMemory(m, { fact, outcome: 'confirming', message: '', citedBy: [] }))
+    const cancel = (fact: Fact) => update($, memoryResultsAtom, m => cancelForget(m, fact.id))
     const forget = async (fact: Fact) => {
       let ran
       try {

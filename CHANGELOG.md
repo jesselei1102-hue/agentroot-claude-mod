@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.0-rc.3 — kernel 0.4.7 (333cd6e)
+
+- The Memory and Review panes open with the keyboard. In the desktop app the first click into a pane moves the keyboard there; that redraw retires the pane's buttons, so the click's press ran nothing ("ui_press not handled" in the app's log) and every button took two clicks. rc.2's refresh after `Forget` and `Cancel` did not help and is removed.
+
 ## 1.2.0-rc.2 — kernel 0.4.7 (333cd6e)
 
 - `Forget` and `Cancel` in the Memory pane work on the first click. The desktop app drew a write of the pane's own state one press late, so each needed two clicks; they now refresh the snapshot as `✗ Forget` and the Review pane's buttons do.
