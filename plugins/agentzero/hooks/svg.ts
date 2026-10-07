@@ -1,5 +1,6 @@
 import type { BandModel, PillTone } from './band'
 import type { Card } from './cards'
+import type { MemoryRow } from './memory'
 import { KIND_LABEL, type PaneRow } from './pane'
 
 export const PALETTE: Record<PillTone, { fg: string; bg: string }> = {
@@ -151,6 +152,71 @@ export function pendingItemSvg(row: PaneRow): string {
     ? text(14, h + 8, cutToWidth(row.message, 332, 12), 12, PALETTE.red.fg)
     : text(14, h + 8, cutToWidth(row.item.provenance, 332, 12), 12, MUTED)
   return svg(360, h + 22, body)
+}
+
+export function memoryHeaderSvg(active: number, inHotSet: number, forgotten: number): string {
+  const a = chip(0, 48, `${active} active`, PALETTE.green.fg, PALETTE.green.bg)
+  const b = chip(a.w + 8, 48, `${inHotSet} in hot set`, PALETTE.blue.fg, PALETTE.blue.bg)
+  const c = forgotten > 0 ? chip(a.w + b.w + 16, 48, `${forgotten} forgotten`, PALETTE.grey.fg, PALETTE.grey.bg).svg : ''
+  return svg(
+    360,
+    76,
+    text(0, 18, 'Your memory', 17, INK, ' font-weight="700"') +
+      text(0, 38, 'Facts the assistant applies here. Forget any that are wrong.', 12, MUTED) +
+      a.svg +
+      b.svg +
+      c,
+  )
+}
+
+const FACT_STYLE: Record<MemoryRow['state'], { fg: string; fill: string }> = {
+  active: { fg: PALETTE.green.fg, fill: '#FFFFFF' },
+  confirming: { fg: PALETTE.red.fg, fill: '#FFF8F7' },
+  forgotten: { fg: PALETTE.grey.fg, fill: '#F7F7F8' },
+  failed: { fg: PALETTE.red.fg, fill: PALETTE.red.bg },
+}
+
+function citedLine(skills: readonly string[]): string {
+  return skills.length === 1
+    ? `Cited by skill ${skills[0]}, which needs a new version`
+    : `Cited by skills ${skills.join(', ')}, which need new versions`
+}
+
+export function factSvg(row: MemoryRow): string {
+  const { fg, fill } = FACT_STYLE[row.state]
+  const gone = row.state === 'forgotten'
+  const lines = wrap(row.fact.sentence, 332, 14.5, 2)
+  const h = 74 + 20 * (lines.length - 1)
+  const cited = row.citedBy.length > 0 ? wrap(citedLine(row.citedBy), 332, 12, 2) : []
+  const extra = 18 * cited.length
+  let body = `<rect x="0.5" y="0.5" width="359" height="${h + 21 + extra}" rx="14" fill="${fill}" stroke="${fg}" stroke-opacity="0.22"/>`
+  let x = 14
+  if (row.fact.createdAt !== null) {
+    const date = row.fact.createdAt.slice(5, 16).replace('T', ' ')
+    body += text(x, 29.5, date, 11.5, MUTED)
+    x += textWidth(date, 11.5) + 10
+  }
+  if (row.fact.inHotSet && !gone) {
+    const c = chip(x, 14, 'in hot set', PALETTE.blue.fg, PALETTE.blue.bg, 11)
+    body += c.svg
+    x += c.w + 6
+  }
+  if (row.fact.scope === 'task') body += chip(x, 14, 'task', PALETTE.grey.fg, PALETTE.grey.bg, 11).svg
+  if (gone) body += text(346, 29.5, '✗ Forgotten', 12, fg, ' text-anchor="end" font-weight="700"')
+  const strike = gone ? ' text-decoration="line-through"' : ''
+  lines.forEach((line, i) => {
+    body += text(14, 58 + 20 * i, line, 14.5, gone ? MUTED : INK, ` font-weight="700"${strike}`)
+  })
+  if (row.state === 'failed' && row.message !== null) {
+    body += text(14, h + 8, cutToWidth(row.message, 332, 12), 12, PALETTE.red.fg)
+  } else {
+    const words = row.fact.said !== null ? `Your words: “${row.fact.said}”` : 'Inferred by the assistant, kept by you'
+    body += text(14, h + 8, cutToWidth(words, 332, 12), 12, MUTED)
+  }
+  cited.forEach((line, i) => {
+    body += text(14, h + 26 + 18 * i, line, 12, PALETTE.amber.fg)
+  })
+  return svg(360, h + 22 + extra, body)
 }
 
 export function cardSvg(card: Card): string {

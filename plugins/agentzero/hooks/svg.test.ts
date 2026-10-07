@@ -1,6 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 import { bandModel } from './band'
-import { PALETTE, bandSvg, cardSvg, cutToWidth, escapeXml, paneHeaderSvg, pendingItemSvg, textWidth, wrap } from './svg'
+import { PALETTE, bandSvg, cardSvg, cutToWidth, escapeXml, factSvg, memoryHeaderSvg, paneHeaderSvg, pendingItemSvg, textWidth, wrap } from './svg'
+import type { MemoryRow } from './memory'
 
 test('escapeXml', () => {
   expect(escapeXml(`<a & "b" 'c'>`)).toBe('&lt;a &amp; &quot;b&quot; &apos;c&apos;&gt;')
@@ -66,4 +67,68 @@ test('pendingItemSvg strikes a rejected item and shows a failure in red', () => 
   expect(failed).toContain(PALETTE.red.fg)
   expect(failed).toContain('No pending item fact:a')
   expect(paneHeaderSvg(1, 2)).toContain('2 done')
+})
+
+const memRow = (over: Partial<MemoryRow> = {}, fact: Partial<MemoryRow['fact']> = {}): MemoryRow => ({
+  fact: { id: 'fact:a', sentence: 'Never deploy on Fridays.', said: '周五别部署', author: 'human', createdAt: '2026-10-02T11:12:00.000+08:00', scope: 'project', inHotSet: true, ...fact },
+  state: 'active', message: null, citedBy: [], actionable: true, ...over,
+})
+
+test('memoryHeaderSvg: chips', () => {
+  const none = memoryHeaderSvg(3, 1, 0)
+  expect(none).toContain('Your memory')
+  expect(none).toContain('Facts the assistant applies here. Forget any that are wrong.')
+  expect(none).toContain('3 active')
+  expect(none).toContain('1 in hot set')
+  expect(none).not.toContain('forgotten')
+  expect(memoryHeaderSvg(2, 1, 1)).toContain('1 forgotten')
+})
+
+test('factSvg: words and tags', () => {
+  const svg = factSvg(memRow({}, { scope: 'task' }))
+  expect(svg).toContain('Your words: “周五别部署”')
+  expect(svg).toContain('in hot set')
+  expect(svg).toContain('>task<')
+  expect(svg).toContain('10-02 11:12')
+})
+
+test('factSvg: inferred', () => {
+  expect(factSvg(memRow({}, { said: null, author: 'agent' }))).toContain('Inferred by the assistant, kept by you')
+})
+
+test('factSvg: forgotten', () => {
+  const svg = factSvg(memRow({ state: 'forgotten', actionable: false }))
+  expect(svg).toContain('✗ Forgotten')
+  expect(svg).toContain('line-through')
+  expect(svg).not.toContain('in hot set')
+})
+
+test('factSvg: failed shows the message', () => {
+  const svg = factSvg(memRow({ state: 'failed', message: 'no active fact:a' }))
+  expect(svg).toContain('no active fact:a')
+  expect(svg).toContain(PALETTE.red.fg)
+  expect(svg).not.toContain('Your words')
+})
+
+test('factSvg: cited by one and by two skills', () => {
+  // the line wraps rather than cut the copy; join the <text> runs to read it whole
+  const read = (svg: string) => (svg.match(/fill="#B26A00">[^<]*</g) ?? []).map(t => t.slice(15, -1)).join(' ')
+  expect(read(factSvg(memRow({ state: 'forgotten', citedBy: ['deploy-check'] })))).toBe('Cited by skill deploy-check, which needs a new version')
+  expect(read(factSvg(memRow({ state: 'forgotten', citedBy: ['a', 'b'] })))).toBe('Cited by skills a, b, which need new versions')
+})
+
+test('factSvg escapes', () => {
+  const svg = factSvg(memRow({}, { sentence: 'a<b & "c"', said: '<x>' }))
+  expect(svg).toContain('&lt;')
+  expect(svg).toContain('&amp;')
+  expect(svg).toContain('&quot;')
+  expect(svg).not.toContain('a<b')
+  expect(svg).not.toContain('<x>')
+})
+
+test('factSvg cuts a long Chinese sentence', () => {
+  const svg = factSvg(memRow({}, { sentence: '部署'.repeat(40) }))
+  const lines = svg.match(/<text[^>]*font-size="14.5"[^>]*>[^<]*<\/text>/g) ?? []
+  expect(lines.length).toBe(2)
+  expect(lines[1]).toContain('…')
 })
