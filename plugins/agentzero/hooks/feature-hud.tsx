@@ -1,6 +1,6 @@
 import { atom, read, update } from 'claude-code'
 import type { On } from 'claude-code'
-import type { Fact, HudState, MemoryResults, PaneResults, PendingItem, RawOpen } from '../types'
+import type { Fact, HudState, MemoryResults, PaneNote, PaneResults, PendingItem, RawOpen } from '../types'
 import { bandModel } from './band'
 import { cardForCall, groupCard, type CallLike } from './cards'
 import { MEMORY_PANE, MEMORY_TITLE, cancelForget, forgetArgv, forgetResult, memoryRows, mergeMemory, type MemoryRow } from './memory'
@@ -14,6 +14,8 @@ const hotSetErrorAtom = atom({ plugin: 'agentzero', key: 'hotSetError' } as cons
 const paneResultsAtom = atom({ plugin: 'agentzero', key: 'paneResults' } as const, {} as PaneResults)
 const rawOpenAtom = atom({ plugin: 'agentzero', key: 'rawOpen' } as const, {} as RawOpen)
 const memoryResultsAtom = atom({ plugin: 'agentzero', key: 'memoryResults' } as const, {} as MemoryResults)
+// What the operator changed in a pane, for the assistant on the next prompt (feature-hotset.ts)
+const paneNotesAtom = atom({ plugin: 'agentzero', key: 'paneNotes' } as const, [] as PaneNote[])
 
 const KEEP_TIMEOUT_MS = 10_000
 
@@ -101,6 +103,10 @@ export function registerHud(on: On): void {
       }
       const result = paneResult(item, verb, ran)
       await update($, paneResultsAtom, m => mergeResult(m, result))
+      if (result.outcome !== 'failed') {
+        const note: PaneNote = { verb: result.outcome, kind: item.kind, sentence: item.sentence }
+        await update($, paneNotesAtom, notes => [...notes, note])
+      }
       const io: HudIo = {
         run: (argv, init) => $.process.run(argv, init),
         read: p => $.fs.read(p) as Promise<string>,
@@ -175,6 +181,9 @@ export function registerHud(on: On): void {
       }
       const result = forgetResult(fact, ran)
       await update($, memoryResultsAtom, m => mergeMemory(m, result))
+      if (result.outcome === 'forgotten') {
+        await update($, paneNotesAtom, notes => [...notes, { verb: 'forgot', kind: 'fact', sentence: fact.sentence }])
+      }
       const io: HudIo = {
         run: (argv, init) => $.process.run(argv, init),
         read: p => $.fs.read(p) as Promise<string>,
