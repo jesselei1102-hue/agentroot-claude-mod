@@ -4,7 +4,7 @@ import type { Tone } from './cards'
 export type PillTone = Tone | 'ink' | 'red'
 export type Pill = { text: string; tone: PillTone }
 export type Ring = { percent: number; tone: 'blue' | 'amber'; note: string | null }
-export type BandModel = { pills: Pill[]; ring: Ring | null; showReview: boolean; alt: string }
+export type BandModel = { pills: Pill[]; ring: Ring | null; showReview: boolean; showMemory: boolean; alt: string }
 
 export const CONTEXT_WARN_PERCENT = 80
 
@@ -45,6 +45,7 @@ export function bandModel(hud: HudState, hotSetError: string | null, contextPerc
     pills,
     ring,
     showReview: snap !== null && snap.pending.length > 0,
+    showMemory: snap !== null,
     alt: snap !== null ? `AgentZero memory: ${snap.active} active, ${snap.pending.length} waiting` : 'AgentZero memory: state unknown',
   }
 }

@@ -9,6 +9,7 @@ const SNAP = {
   active: 2,
   pending: [{ id: 'fact:a', kind: 'fact', sentence: 'S', provenance: 'agent proposed it', createdAt: null }],
   hotSet: null,
+  facts: null,
 }
 const OK: SnapshotResult = { ok: true, snapshot: SNAP }
 
@@ -21,7 +22,7 @@ test('parseSnapshot accepts the schema and rejects the rest', () => {
   expect(parseSnapshot('{"schema":1,"active":1,"pending":[{"id":3}],"hotSet":null}')).toEqual({ ok: false, error: 'unreadable snapshot' })
   expect(
     parseSnapshot('{"schema":1,"active":0,"pending":[],"hotSet":{"at":"2026-10-05T09:57:00+08:00","factIds":["f1"]}}'),
-  ).toEqual({ ok: true, snapshot: { active: 0, pending: [], hotSet: { at: '2026-10-05T09:57:00+08:00', factIds: ['f1'] } } })
+  ).toEqual({ ok: true, snapshot: { active: 0, pending: [], hotSet: { at: '2026-10-05T09:57:00+08:00', factIds: ['f1'] }, facts: null } })
 })
 
 test('nextHud keeps the last good snapshot and marks it stale on failure', () => {
@@ -151,4 +152,27 @@ test('readSnapshot looks for another Python when the cached one is gone or lacks
         : argv[1] === '-c' ? { exitCode: argv[0] === 'python3' ? 0 : 1 } : { exitCode: 0, stdout: OK_JSON },
   })
   expect(await readSnapshot(noYaml.io, '/w8')).toEqual(OK)
+})
+
+const FACT = { id: 'fact:a', sentence: 'Use pnpm.', said: '用 pnpm', author: 'human', createdAt: '2026-10-06T10:17:11.791+08:00', scope: 'project', inHotSet: true }
+const withFacts = (facts: unknown) => JSON.stringify({ ...JSON.parse(OK_JSON), facts })
+
+test('parseSnapshot facts: read', () => {
+  const r = parseSnapshot(withFacts([FACT]))
+  expect(r.ok && r.snapshot.facts).toEqual([FACT])
+})
+
+test('parseSnapshot facts: missing → null, rest intact', () => {
+  const r = parseSnapshot(OK_JSON)
+  expect(r.ok).toBe(true)
+  expect(r.ok && r.snapshot.facts).toBeNull()
+  expect(r.ok && r.snapshot.pending.length).toBe(1)
+})
+
+test('parseSnapshot facts: malformed → null', () => {
+  const r = parseSnapshot(withFacts([{ ...FACT, inHotSet: 'yes' }]))
+  expect(r.ok).toBe(true)
+  expect(r.ok && r.snapshot.facts).toBeNull()
+  const notList = parseSnapshot(withFacts('x'))
+  expect(notList.ok && notList.snapshot.facts).toBeNull()
 })

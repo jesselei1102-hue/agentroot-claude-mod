@@ -41,7 +41,7 @@ test('the pane header puts the subline on its own line', () => {
 test('bandSvg holds every pill and the ring', () => {
   const now = Date.parse('2026-10-05T10:00:00+08:00')
   const pending = [{ id: 'fact:a', kind: 'fact', sentence: 'a', provenance: 'p', createdAt: null }, { id: 'fact:b', kind: 'fact', sentence: 'b', provenance: 'p', createdAt: null }]
-  const svg = bandSvg(bandModel({ snapshot: { active: 3, pending, hotSet: { at: '2026-10-05T09:57:00+08:00', factIds: [] } }, error: null, stale: false }, null, 41, now))
+  const svg = bandSvg(bandModel({ snapshot: { active: 3, pending, hotSet: { at: '2026-10-05T09:57:00+08:00', factIds: [] }, facts: [] }, error: null, stale: false }, null, 41, now))
   for (const text of ['● AgentZero', '3 active', '2 waiting', 'hot set · 3 min ago', 'context 41%']) expect(svg).toContain(text)
   expect(svg).toContain(PALETTE.amber.fg)
   expect(svg.startsWith('<svg')).toBe(true)

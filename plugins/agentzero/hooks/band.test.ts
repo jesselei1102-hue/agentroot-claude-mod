@@ -5,7 +5,7 @@ import { bandModel, relativeTime } from './band'
 const NOW = Date.parse('2026-10-05T10:00:00+08:00')
 const item = (id: string) => ({ id, kind: 'fact', sentence: id, provenance: 'agent proposed it', createdAt: null })
 const hud = (active: number, pending: number, at: string | null = '2026-10-05T09:57:00+08:00'): HudState => ({
-  snapshot: { active, pending: Array.from({ length: pending }, (_, i) => item(`fact:${i}`)), hotSet: at === null ? null : { at, factIds: [] } },
+  snapshot: { active, pending: Array.from({ length: pending }, (_, i) => item(`fact:${i}`)), hotSet: at === null ? null : { at, factIds: [] }, facts: [] },
   error: null,
   stale: false,
 })
@@ -41,4 +41,12 @@ test('band states', () => {
   expect(failed.alt).toBe('AgentZero memory: state unknown')
   expect(failed.showReview).toBe(false)
   expect(bandModel({ snapshot: null, error: null, stale: false }, null, 41, NOW).pills[1]).toEqual({ text: 'reading memory…', tone: 'grey' })
+})
+
+test('showMemory with a snapshot, even with no Facts', () => {
+  expect(bandModel(hud(0, 0), null, 41, NOW).showMemory).toBe(true)
+})
+
+test('no showMemory without a snapshot', () => {
+  expect(bandModel({ snapshot: null, error: 'timed out', stale: false }, null, 41, NOW).showMemory).toBe(false)
 })

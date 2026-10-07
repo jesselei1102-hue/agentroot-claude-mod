@@ -1,4 +1,4 @@
-import type { HudState, PendingItem, Snapshot } from '../types'
+import type { Fact, HudState, PendingItem, Snapshot } from '../types'
 import { findPython } from './python'
 
 export const SNAPSHOT_TIMEOUT_MS = 2_000
@@ -34,6 +34,30 @@ function pendingItem(v: unknown): PendingItem | null {
   return { id: o.id as string, kind: o.kind as string, sentence: o.sentence as string, provenance: o.provenance as string, createdAt: o.createdAt as string | null }
 }
 
+function fact(v: unknown): Fact | null {
+  if (typeof v !== 'object' || v === null) return null
+  const o = v as Record<string, unknown>
+  if (![o.id, o.sentence, o.author, o.scope].every(isStr) || typeof o.inHotSet !== 'boolean') return null
+  if (o.said !== null && !isStr(o.said)) return null
+  if (o.createdAt !== null && !isStr(o.createdAt)) return null
+  return {
+    id: o.id as string,
+    sentence: o.sentence as string,
+    said: o.said as string | null,
+    author: o.author as string,
+    createdAt: o.createdAt as string | null,
+    scope: o.scope as string,
+    inHotSet: o.inHotSet,
+  }
+}
+
+// A list that cannot be read is null, not empty, and does not fail the rest of the snapshot.
+function facts(v: unknown): Fact[] | null {
+  if (!Array.isArray(v)) return null
+  const list = v.map(fact)
+  return list.some(f => f === null) ? null : (list as Fact[])
+}
+
 export function parseSnapshot(stdout: string): SnapshotResult {
   let o: Record<string, unknown>
   try {
@@ -56,7 +80,7 @@ export function parseSnapshot(stdout: string): SnapshotResult {
     if (!Array.isArray(h.factIds) || !h.factIds.every(isStr)) return UNREADABLE
     hotSet = { at: h.at as string | null, factIds: h.factIds as string[] }
   }
-  return { ok: true, snapshot: { active: o.active, pending: pending as PendingItem[], hotSet } }
+  return { ok: true, snapshot: { active: o.active, pending: pending as PendingItem[], hotSet, facts: facts(o.facts) } }
 }
 
 function firstLine(text: string): string {
