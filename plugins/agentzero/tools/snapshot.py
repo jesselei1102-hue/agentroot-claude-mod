@@ -35,6 +35,39 @@ def _hot_set(memory_dir: Path):
     }
 
 
+def _when(created_at: str) -> float:
+    try:
+        return datetime.datetime.fromisoformat(created_at).timestamp()
+    except (TypeError, ValueError):
+        return float("-inf")
+
+
+def _facts(memory_dir: Path, hot_ids: set) -> list:
+    """The active Facts, newest first, as the Memory pane shows them."""
+    from memory.lifecycle import parse_entry
+
+    entries = [
+        parse_entry(path)
+        for path in sorted(memory_dir.glob("*.yaml"))
+        if path.name != "graph.yaml"
+    ]
+    active = sorted(
+        (e for e in entries if e.status == "active"), key=lambda e: _when(e.created_at), reverse=True
+    )
+    return [
+        {
+            "id": f"fact:{e.id}",
+            "sentence": e.rule,
+            "said": e.said,
+            "author": e.author,
+            "createdAt": str(e.created_at) if _DATE.match(str(e.created_at)) else None,
+            "scope": e.scope,
+            "inHotSet": e.id in hot_ids,
+        }
+        for e in active
+    ]
+
+
 def snapshot(workspace: Path) -> dict:
     # The plugin may have found a Python that is too old or lacks PyYAML; say that, not "upgrade".
     try:
@@ -44,7 +77,7 @@ def snapshot(workspace: Path) -> dict:
     if sys.version_info < (3, 11):
         return {"schema": 1, "error": NO_PYTHON}
     try:
-        from memory.lifecycle import live_fact_ids
+        from memory.lifecycle import parse_entry  # noqa: F401
         from memory.review import collect_pending
     except ImportError as exc:
         if (exc.name or "").startswith("memory"):
@@ -55,10 +88,11 @@ def snapshot(workspace: Path) -> dict:
         return {"schema": 1, "error": f"no memory/ directory under {workspace}"}
     memory_dir = workspace / "memory"
     pending = collect_pending(workspace)
-    pending_facts = {item.id for item in pending if item.kind == "fact"}
+    hot_set = _hot_set(memory_dir)
+    facts = _facts(memory_dir, set(hot_set["factIds"]) if hot_set else set())
     return {
         "schema": 1,
-        "active": len(live_fact_ids(memory_dir) - pending_facts),
+        "active": len(facts),
         "pending": [
             {
                 "id": item.qualified_id,
@@ -69,7 +103,8 @@ def snapshot(workspace: Path) -> dict:
             }
             for item in pending
         ],
-        "hotSet": _hot_set(memory_dir),
+        "hotSet": hot_set,
+        "facts": facts,
     }
 
 
