@@ -30,7 +30,12 @@ This is sub-project A of the HUD work. It covers ideas 1, 2, 5 and 10 from the 2
 | 5 | Context gauge | A ring in the band |
 | 10 | Skill label | A card when a skill is used |
 
-Later sub-projects, each with its own spec: B conflict alarm (6), C multi-session sync (7), D memory graph pane (4).
+A later sub-project has its own spec: D, reshaped from a graph pane (4) into a pane that lists Facts ([memory-pane-spec.md](memory-pane-spec.md)).
+
+Dropped (operator, 2026-10-07):
+
+- B conflict alarm (6). The kernel already replaces a Fact by `--fact-key` and reports a `similar:` Fact on `remember`; that is enough for daily use.
+- C multi-session sync (7). Each session loads the hot set itself, and what is not in the hot set matters little.
 
 ## Decisions (operator, 2026-10-05)
 
@@ -181,7 +186,7 @@ The rule: a failure in the HUD never blocks work and never hides the engine's ow
 
 ## Out of scope
 
-- The conflict alarm, multi-session sync and graph pane (sub-projects B, C, D).
+- The Memory pane (sub-project D, [its own spec](memory-pane-spec.md)). The conflict alarm (B) and multi-session sync (C) are dropped.
 - Undo in the pane.
 - Light and dark theme variants: the colours are tuned for the desktop's light theme; a dark theme is checked by hand and fixed only if unreadable.
 - Changing anything in the AgentZero repo.
