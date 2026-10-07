@@ -1,17 +1,19 @@
 import { atom, read, update } from 'claude-code'
 import type { On } from 'claude-code'
-import type { HudState, PaneResults, PendingItem, RawOpen } from '../types'
+import type { Fact, HudState, MemoryResults, PaneResults, PendingItem, RawOpen } from '../types'
 import { bandModel } from './band'
 import { cardForCall, groupCard, type CallLike } from './cards'
+import { MEMORY_PANE, MEMORY_TITLE, cancelForget, forgetArgv, forgetResult, memoryRows, mergeMemory, type MemoryRow } from './memory'
 import { KIND_LABEL, REVIEW_PANE, REVIEW_TITLE, mergeResult, paneResult, paneRows, reviewArgv } from './pane'
 import { locateWorkspace, sessionData, writeMarks } from './session'
 import { EMPTY_HUD, refreshJob, type HudIo } from './snapshot'
-import { MUTED, PALETTE, bandSvg, cardSvg, paneHeaderSvg, pendingItemSvg } from './svg'
+import { MUTED, PALETTE, bandSvg, cardSvg, factSvg, memoryHeaderSvg, paneHeaderSvg, pendingItemSvg } from './svg'
 
 const hudAtom = atom({ plugin: 'agentzero', key: 'hud' } as const, EMPTY_HUD as HudState)
 const hotSetErrorAtom = atom({ plugin: 'agentzero', key: 'hotSetError' } as const, null as string | null)
 const paneResultsAtom = atom({ plugin: 'agentzero', key: 'paneResults' } as const, {} as PaneResults)
 const rawOpenAtom = atom({ plugin: 'agentzero', key: 'rawOpen' } as const, {} as RawOpen)
+const memoryResultsAtom = atom({ plugin: 'agentzero', key: 'memoryResults' } as const, {} as MemoryResults)
 
 const KEEP_TIMEOUT_MS = 10_000
 
@@ -40,8 +42,8 @@ export function registerHud(on: On): void {
       percent = undefined
     }
     const m = bandModel(await read($, hudAtom), await read($, hotSetErrorAtom), percent, await $.clock.now())
-    const openReview = async () => {
-      await $.ui.open({ id: REVIEW_PANE, title: REVIEW_TITLE })
+    const openPane = async (id: string, title: string) => {
+      await $.ui.open({ id, title })
       const io: HudIo = {
         run: (argv, init) => $.process.run(argv, init),
         read: p => $.fs.read(p) as Promise<string>,
@@ -52,7 +54,8 @@ export function registerHud(on: On): void {
       await data.gate.run(refreshJob(io, workspace))
     }
     const { Box, Text, Button, Svg } = $.ui.resolve(e) as Record<string, (props: Record<string, unknown>) => never>
-    const review = m.showReview ? <Button key="az-review" label="Review" variant="primary" onPress={openReview} /> : null
+    const review = m.showReview ? <Button key="az-review" label="Review" variant="primary" onPress={() => openPane(REVIEW_PANE, REVIEW_TITLE)} /> : null
+    const memory = m.showMemory ? <Button key="az-memory" label="Memory" onPress={() => openPane(MEMORY_PANE, MEMORY_TITLE)} /> : null
 
     if (e.surface === 'terminal') {
       return (
@@ -64,6 +67,7 @@ export function registerHud(on: On): void {
             <Text color={MUTED}>{`context ${m.ring.percent}%${m.ring.note !== null ? ` · ${m.ring.note}` : ''}`}</Text>
           )}
           {review}
+          {memory}
         </Box>
       )
     }
@@ -71,6 +75,7 @@ export function registerHud(on: On): void {
       <Box flexDirection="row" alignItems="center" gap={1}>
         <Svg source={bandSvg(m)} alt={m.alt} />
         {review}
+        {memory}
       </Box>
     )
   })
@@ -144,6 +149,104 @@ export function registerHud(on: On): void {
     )
   })
 
+  on('ui.render', { component: 'Pane', requestId: MEMORY_PANE }, async ($, e) => {
+    const { Box, Text, Button, Svg } = $.ui.resolve(e) as Record<string, (props: Record<string, unknown>) => never>
+    const data = sessionData(await $.session.id())
+    const workspace = await locateWorkspace(data, () => $.session.root(), p => $.fs.stat(p).then(() => true, () => false))
+    if (workspace === null) return <Text color={MUTED}>This is not an AgentZero workspace.</Text>
+
+    const hud = await read($, hudAtom)
+    // never "no Facts" when the list could not be read
+    if (hud.snapshot === null) {
+      return <Text color={MUTED}>{hud.error !== null ? `memory unreadable (${hud.error})` : 'reading memory…'}</Text>
+    }
+    if (hud.snapshot.facts === null) return <Text color={MUTED}>memory unreadable (fact list)</Text>
+    const { rows, active, inHotSet, forgotten, hidden } = memoryRows(hud.snapshot.facts, await read($, memoryResultsAtom))
+    if (rows.length === 0) return <Text color={MUTED}>No Facts yet.</Text>
+
+    const ask = (fact: Fact) => update($, memoryResultsAtom, m => mergeMemory(m, { fact, outcome: 'confirming', message: '', citedBy: [] }))
+    const cancel = (fact: Fact) => update($, memoryResultsAtom, m => cancelForget(m, fact.id))
+    const forget = async (fact: Fact) => {
+      let ran
+      try {
+        ran = await $.process.run(forgetArgv(workspace, fact.id), { cwd: workspace, timeoutMs: KEEP_TIMEOUT_MS })
+      } catch (err) {
+        ran = err instanceof Error ? err : new Error(String(err))
+      }
+      const result = forgetResult(fact, ran)
+      await update($, memoryResultsAtom, m => mergeMemory(m, result))
+      const io: HudIo = {
+        run: (argv, init) => $.process.run(argv, init),
+        read: p => $.fs.read(p) as Promise<string>,
+        write: fn => update($, hudAtom, fn),
+        status: t => $.ui.status(t),
+        pluginRoot: $.plugin.root,
+      }
+      await data.gate.run(refreshJob(io, workspace))
+    }
+    const buttons = (row: MemoryRow) => {
+      const id = row.fact.id
+      if (row.state === 'confirming') {
+        return (
+          <Box flexDirection="row" gap={2}>
+            <Text color={PALETTE.red.fg}>Forget this Fact?</Text>
+            <Button key={`az-forget-yes-${id}`} label="✗ Forget" plain={true} onPress={() => forget(row.fact)} />
+            <Button key={`az-forget-no-${id}`} label="Cancel" plain={true} dimColor={true} onPress={() => cancel(row.fact)} />
+          </Box>
+        )
+      }
+      return row.actionable ? <Button key={`az-forget-${id}`} label="Forget" plain={true} dimColor={true} onPress={() => ask(row.fact)} /> : null
+    }
+    const more = hidden > 0 ? <Text color={MUTED}>{`+${hidden} older Facts not shown`}</Text> : null
+
+    if (e.surface === 'terminal') {
+      const head = `Your memory · ${active} active · ${inHotSet} in hot set${forgotten > 0 ? ` · ${forgotten} forgotten` : ''}`
+      return (
+        <Box flexDirection="column" gap={1}>
+          <Text bold={true}>{head}</Text>
+          {rows.map(row => {
+            const f = row.fact
+            const parts = [
+              f.createdAt !== null ? f.createdAt.slice(5, 16).replace('T', ' ') : null,
+              f.inHotSet && row.state !== 'forgotten' ? '[in hot set]' : null,
+              f.scope === 'task' ? '[task]' : null,
+              f.sentence,
+            ].filter((p): p is string => p !== null)
+            return (
+              <Box flexDirection="column">
+                <Text dimColor={row.state === 'forgotten'}>{parts.join(' ')}</Text>
+                <Text color={MUTED}>{f.said !== null ? `  Your words: “${f.said}”` : '  Inferred by the assistant, kept by you'}</Text>
+                {row.state === 'forgotten' && <Text color={MUTED}>✗ Forgotten</Text>}
+                {row.state === 'failed' && <Text color={PALETTE.red.fg}>{row.message ?? ''}</Text>}
+                {row.citedBy.length > 0 && (
+                  <Text color={PALETTE.amber.fg}>
+                    {row.citedBy.length === 1
+                      ? `Cited by skill ${row.citedBy[0]}, which needs a new version`
+                      : `Cited by skills ${row.citedBy.join(', ')}, which need new versions`}
+                  </Text>
+                )}
+                {buttons(row)}
+              </Box>
+            )
+          })}
+          {more}
+        </Box>
+      )
+    }
+    return (
+      <Box flexDirection="column" gap={1} paddingX={1}>
+        <Svg source={memoryHeaderSvg(active, inHotSet, forgotten)} alt={`${active} active, ${inHotSet} in hot set`} />
+        {rows.map(row => (
+          <Box flexDirection="column" gap={0}>
+            <Svg source={factSvg(row)} alt={row.fact.sentence} />
+            {buttons(row)}
+          </Box>
+        ))}
+        {more}
+      </Box>
+    )
+  })
+
   on('ui.render', { component: 'ToolUse' }, async ($, e, next) => {
     const data = sessionData(await $.session.id())
     const workspace = await locateWorkspace(data, () => $.session.root(), p => $.fs.stat(p).then(() => true, () => false))
@@ -207,6 +310,7 @@ export function registerHud(on: On): void {
 
   on('ui.close', async ($, e, next) => {
     if (e.id === REVIEW_PANE) await update($, paneResultsAtom, () => ({}))
+    if (e.id === MEMORY_PANE) await update($, memoryResultsAtom, () => ({}))
     return next(e)
   })
 }

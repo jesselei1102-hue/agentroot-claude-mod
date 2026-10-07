@@ -35,6 +35,16 @@ test('the review button opens the pane and refreshes', async ($, on) => {
   expect(w.snapshotRuns.length).toBe(before + 1)
 })
 
+test('the band has a Memory button that opens the pane', async ($, on) => {
+  const w = world(on)
+  await $.session.start(START)
+  const ui = await $.ui.mount({ plugin: 'agentzero', surface: 'desktop', component: 'AbovePrompt', props: BAND })
+  const before = w.snapshotRuns.length
+  await ui.press({ key: 'az-memory' })
+  expect(w.opened).toEqual(['agentzero-memory'])
+  expect(w.snapshotRuns.length).toBe(before + 1)
+})
+
 test('no band outside a workspace or during a survey', async ($, on) => {
   const w = world(on, { existing: [] })
   await $.session.start(START)

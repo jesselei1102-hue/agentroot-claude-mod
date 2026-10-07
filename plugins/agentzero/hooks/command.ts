@@ -4,15 +4,17 @@ import type { HudState } from '../types'
 import { EMPTY_HUD, refreshJob, type HudIo } from './snapshot'
 import { locateWorkspace, sessionData } from './session'
 import { PYTHON_PROBE, findPython } from './python'
+import { MEMORY_PANE, MEMORY_TITLE } from './memory'
 import { REVIEW_PANE, REVIEW_TITLE } from './pane'
 import { findWorkspace } from './workspace'
 
 const USAGE = [
-  'Usage: /agentzero <init|upgrade|status|review>',
+  'Usage: /agentzero <init|upgrade|status|review|memory>',
   '  init     make this project folder an AgentZero workspace for Claude Code',
   '  upgrade  bring this workspace to the plugin\'s AgentZero version',
   '  status   show whether this workspace can run, and the plugin and kernel versions',
   '  review   open the pane of what waits for your yes',
+  '  memory   open the pane of the Facts the assistant applies',
 ].join('\n')
 
 const NO_PYTHON = [
@@ -57,8 +59,8 @@ export function registerCommand(on: On): void {
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'agentzero',
-      description: 'Set up, upgrade, check or review AgentZero in this project (init, upgrade, status, review)',
-      argumentHint: '<init|upgrade|status|review>',
+      description: 'Set up, upgrade, check, review or browse AgentZero in this project (init, upgrade, status, review, memory)',
+      argumentHint: '<init|upgrade|status|review|memory>',
     })
     const data = sessionData(await $.session.id())
     const workspace = await locateWorkspace(data, () => $.session.root(), p => $.fs.stat(p).then(() => true, () => false))
@@ -77,7 +79,7 @@ export function registerCommand(on: On): void {
 
   on('command.run', { command: 'agentzero' }, async ($, e) => {
     const sub = e.args.trim().split(/\s+/)[0] ?? ''
-    if (sub !== 'init' && sub !== 'upgrade' && sub !== 'status' && sub !== 'review') return { text: USAGE }
+    if (sub !== 'init' && sub !== 'upgrade' && sub !== 'status' && sub !== 'review' && sub !== 'memory') return { text: USAGE }
 
     const root = trimSlash(await $.session.root())
     const exists = (p: string) => $.fs.stat(p).then(() => true, () => false)
@@ -90,8 +92,9 @@ export function registerCommand(on: On): void {
       return { text: `AgentZero: ${root} is not inside an AgentZero workspace. Run /agentzero init in a project folder first.` }
     }
 
-    if (sub === 'review' && workspace !== null) {
-      await $.ui.open({ id: REVIEW_PANE, title: REVIEW_TITLE })
+    if ((sub === 'review' || sub === 'memory') && workspace !== null) {
+      const review = sub === 'review'
+      await $.ui.open(review ? { id: REVIEW_PANE, title: REVIEW_TITLE } : { id: MEMORY_PANE, title: MEMORY_TITLE })
       const data = sessionData(await $.session.id())
       const io: HudIo = {
         run: (argv, init) => $.process.run(argv, init),
@@ -101,7 +104,7 @@ export function registerCommand(on: On): void {
         pluginRoot: $.plugin.root,
       }
       await data.gate.run(refreshJob(io, workspace))
-      return { text: 'Opened the AgentZero review pane.' }
+      return { text: review ? 'Opened the AgentZero review pane.' : 'Opened the AgentZero memory pane.' }
     }
 
     const python = await findPython(argv => $.process.run(argv, { timeoutMs: PROBE_TIMEOUT_MS }))
