@@ -24,15 +24,16 @@ export function relativeTime(now: number, iso: string): string {
 
 export function bandModel(hud: HudState, hotSetError: string | null, contextPercent: number | undefined, now: number): BandModel {
   const snap = hud.snapshot
-  const pills: Pill[] = [{ text: 'AgentZero', tone: 'ink' }]
+  // Colour only where it means something: what waits is the one thing to act on.
+  const pills: Pill[] = []
   if (snap !== null) {
-    pills.push({ text: `${snap.active} active`, tone: 'green' })
-    pills.push({ text: `${snap.pending.length} waiting`, tone: snap.pending.length > 0 ? 'amber' : 'grey' })
+    pills.push({ text: `${snap.active} active`, tone: 'ink' })
+    if (snap.pending.length > 0) pills.push({ text: `${snap.pending.length} waiting`, tone: 'amber' })
   } else {
     pills.push({ text: hud.error !== null ? 'memory unreadable' : 'reading memory…', tone: 'grey' })
   }
   if (hotSetError !== null) pills.push({ text: `hot set not loaded (${hotSetError})`, tone: 'red' })
-  else if (snap?.hotSet?.at) pills.push({ text: `hot set · ${relativeTime(now, snap.hotSet.at)}`, tone: 'grey' })
+  else if (snap?.hotSet?.at) pills.push({ text: `hot set ${relativeTime(now, snap.hotSet.at)}`, tone: 'grey' })
   else pills.push({ text: 'hot set not loaded yet', tone: 'grey' })
 
   let ring: Ring | null = null

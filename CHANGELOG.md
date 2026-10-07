@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.0-rc.1 — kernel 0.4.7 (333cd6e)
+
+- **The HUD is drawn with the app's own components.** The band, the Review and Memory panes and the cards use the app's text, borders and buttons instead of SVG images, so they take the app's font, sizes and theme. Colour is a theme key and means one thing each: amber waits for you, red failed or is being confirmed, green saved, blue in the hot set or a skill. The band loses its black name pill and the ring; "0 waiting" is no longer shown. Sentences wrap in full in the panes. See `docs/native-ui-spec.md`.
+- A long quote on a card is cut at 60 characters, so "✓ checked" stays on the line.
+
 ## 1.2.0-rc.3 — kernel 0.4.7 (333cd6e)
 
 - The Memory and Review panes open with the keyboard. In the desktop app the first click into a pane moves the keyboard there; that redraw retires the pane's buttons, so the click's press ran nothing ("ui_press not handled" in the app's log) and every button took two clicks. rc.2's refresh after `Forget` and `Cancel` did not help and is removed.

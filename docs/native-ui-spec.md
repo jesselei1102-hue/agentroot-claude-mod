@@ -80,7 +80,7 @@ Dates are `Mon D` (`Oct 6`), read from the date part of `createdAt`, so the time
 ### Cards
 
 - Line 1: the icon and label in the card's theme key, bold (`📌 Remembered`), then the title plain.
-- Line 2, when there is a detail: the detail, dim. The quote in `Your words: “…” ✓ checked` is no longer cut by the plugin; the line is cut by the app at the end.
+- Line 2, when there is a detail: the detail, dim, cut by the app at its end. The quote in `Your words: “…” ✓ checked` is cut first at 60 characters, so the app's cut never takes `✓ checked` (amended during implementation: the plugin no longer estimates widths, but counts characters here).
 - An unchecked card (the old grey outline) is told by its detail, `Quote not checked`; nothing else marks it.
 - `Raw command` / `Hide` as before. A folded group draws the same two lines per card, then `+N other commands`.
 

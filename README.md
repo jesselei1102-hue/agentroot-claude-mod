@@ -131,7 +131,7 @@ A band above the prompt shows the state of the memory at all times:
 
 ![The memory band: 1 Fact active, 0 waiting, hot set loaded 3 hours ago, context 7% used](docs/hud/band.png)
 
-- **The band** shows how many Facts are active, how many wait for your yes, when the hot set was last loaded, and how much of the conversation space is used. When the hot set cannot be loaded, its pill turns red and says why.
+- **The band** shows how many Facts are active, how many wait for your yes, when the hot set was last loaded, and how much of the conversation space is used. When the hot set cannot be loaded, that part turns red and says why.
 - **The pane.** When something waits, the band shows a button, `Review`. It opens a pane at the side. Each item has two buttons: `✓ Keep` and `✗ Reject`. The plugin runs AgentZero's own `review` command for you, and the band count changes.
 - **The Memory pane.** The band also has a button, `Memory`. It opens a pane with every active Fact, newest first, and the words you said when it was saved. To remove a Fact that is wrong or out of date, press `Forget`, then `✗ Forget`. The plugin runs AgentZero's own `forget` command. Nothing is deleted: AgentZero keeps the file and marks the Fact retired.
 - **The assistant is told.** When you keep, reject or forget something in a pane, the plugin tells the assistant with your next message. It does not keep using a Fact you removed.

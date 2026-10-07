@@ -1,5 +1,4 @@
 import type { WriteMark } from './session'
-import { CARD_DETAIL_PX, cutToWidth, textWidth } from './svg'
 import { parseRemember, splitWords } from './words'
 
 export type { WriteMark }
@@ -54,11 +53,12 @@ const DECLARED = /^(already declared|declared): (\S+) \(([^)]*)\) — (.+?) — 
 
 const ON_FILE = 'Already on record'
 
-// The quote is cut so "✓ checked" always fits on the card's detail line.
-const QUOTE_FRAME = 'Your words: “” ✓ checked'
+// The app cuts a long line at its end; the quote is cut first so "✓ checked" stays on it.
+const QUOTE_MAX = 60
 
 function cutQuote(said: string): string {
-  return cutToWidth(said, CARD_DETAIL_PX - textWidth(QUOTE_FRAME, 12.5), 12.5)
+  const chars = Array.from(said)
+  return chars.length <= QUOTE_MAX ? said : chars.slice(0, QUOTE_MAX - 1).join('') + '…'
 }
 
 function card(icon: string, label: string, tone: Tone, title: string, detail: string | null, outline = false): Card {

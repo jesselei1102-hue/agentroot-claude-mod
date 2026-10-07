@@ -10,9 +10,6 @@ async function mount($: any, surface: 'desktop' | 'terminal' = 'desktop') {
   return $.ui.mount({ plugin: 'agentzero', surface, component: 'Pane', props: PANE, requestId: 'agentzero-memory' })
 }
 
-async function sources(ui: any): Promise<string[]> {
-  return (await ui.findAll({ type: 'Svg' })).map((s: any) => String(s.props.source))
-}
 
 test('/agentzero memory opens the pane', async ($, on) => {
   const w = world(on)
@@ -31,29 +28,21 @@ test('/agentzero memory outside a workspace opens nothing', async ($, on) => {
   expect(w.opened).toEqual([])
 })
 
-test('the pane lists the Facts on desktop', async ($, on) => {
-  const w = world(on)
-  w.snapshotJson = json([A, B])
-  await $.session.start(START)
-  const ui = await mount($)
-  const svgs = await sources(ui)
-  expect(svgs[0]).toContain('2 active')
-  expect(svgs[0]).toContain('1 in hot set')
-  expect(svgs[1]).toContain('Never deploy on Fridays.')
-  expect(svgs[2]).toContain('Inferred by the assistant, kept by you')
-  expect(await ui.find({ key: 'az-forget-fact:a' })).toBeDefined()
-})
-
-test('the pane lists the Facts on terminal', async ($, on) => {
-  const w = world(on)
-  w.snapshotJson = json([A, B])
-  await $.session.start(START)
-  const ui = await mount($, 'terminal')
-  expect(await ui.find({ text: 'Your memory · 2 active · 1 in hot set' })).toBeDefined()
-  expect(await ui.find({ text: '10-06 10:17 [in hot set] Never deploy on Fridays.' })).toBeDefined()
-  expect(await ui.find({ text: '  Your words: “周五别部署”' })).toBeDefined()
-  expect(await ui.find({ key: 'az-forget-fact:b' })).toBeDefined()
-})
+for (const surface of ['desktop', 'terminal'] as const) {
+  test(`the pane lists the Facts on ${surface}`, async ($, on) => {
+    const w = world(on)
+    w.snapshotJson = json([A, B])
+    await $.session.start(START)
+    const ui = await mount($, surface)
+    expect(await ui.find({ type: 'Svg' })).toBeUndefined()
+    expect(await ui.find({ text: '2 active · 1 in hot set' })).toBeDefined()
+    expect(await ui.find({ text: 'Never deploy on Fridays.' })).toBeDefined()
+    expect(await ui.find({ text: '“周五别部署”' })).toBeDefined()
+    expect((await ui.find({ type: 'Text', text: /^in hot set$/ }))?.props.color).toBe('suggestion')
+    expect(await ui.find({ text: 'Inferred by the assistant, kept by you' })).toBeDefined()
+    expect(await ui.find({ key: 'az-forget-fact:b' })).toBeDefined()
+  })
+}
 
 test('forget asks first, cancel undoes', async ($, on) => {
   const w = world(on)
@@ -62,7 +51,7 @@ test('forget asks first, cancel undoes', async ($, on) => {
   const ui = await mount($)
   await ui.press({ key: 'az-forget-fact:a' })
   expect(await ui.find({ key: 'az-forget-yes-fact:a' })).toBeDefined()
-  expect(await ui.find({ text: 'Forget this Fact?' })).toBeDefined()
+  expect((await ui.find({ type: 'Text', text: 'Forget this Fact?' }))?.props.color).toBe('error')
   expect(w.runs).toEqual([])
   await ui.press({ key: 'az-forget-no-fact:a' })
   expect(await ui.find({ key: 'az-forget-fact:a' })).toBeDefined()
@@ -79,10 +68,9 @@ test('forget runs the kernel and keeps the row', async ($, on) => {
   w.snapshotJson = json([B])
   await ui.press({ key: 'az-forget-yes-fact:a' })
   expect(w.runs.at(-1)).toEqual({ argv: ['/w/a0', 'memory', 'forget', 'fact:a'], init: { cwd: '/w', timeoutMs: 10000 } })
-  const svgs = await sources(ui)
-  expect(svgs[0]).toContain('1 active')
-  expect(svgs[0]).toContain('1 forgotten')
-  expect(svgs[1]).toContain('✗ Forgotten')
+  expect(await ui.find({ text: '1 active · 0 in hot set · 1 forgotten' })).toBeDefined()
+  expect((await ui.find({ type: 'Text', text: 'Never deploy on Fridays.' }))?.props.strikethrough).toBe(true)
+  expect(await ui.find({ text: 'forgotten' })).toBeDefined()
   expect(await ui.find({ key: 'az-forget-fact:a' })).toBeUndefined()
 })
 
@@ -95,9 +83,8 @@ test('a forgotten row survives a failed refresh', async ($, on) => {
   w.snapshotJson = 'not json'
   await ui.press({ key: 'az-forget-fact:a' })
   await ui.press({ key: 'az-forget-yes-fact:a' })
-  const svgs = await sources(ui)
-  expect(svgs[0]).toContain('1 active')
-  expect(svgs[1]).toContain('✗ Forgotten')
+  expect(await ui.find({ text: '1 active · 0 in hot set · 1 forgotten' })).toBeDefined()
+  expect(await ui.find({ text: 'forgotten' })).toBeDefined()
 })
 
 test('a failed forget shows the reason and offers Forget again', async ($, on) => {
@@ -108,7 +95,7 @@ test('a failed forget shows the reason and offers Forget again', async ($, on) =
   const ui = await mount($)
   await ui.press({ key: 'az-forget-fact:a' })
   await ui.press({ key: 'az-forget-yes-fact:a' })
-  expect((await sources(ui))[1]).toContain('no active fact:a')
+  expect((await ui.find({ type: 'Text', text: 'no active fact:a' }))?.props.color).toBe('error')
   expect(await ui.find({ key: 'az-forget-fact:a' })).toBeDefined()
 })
 

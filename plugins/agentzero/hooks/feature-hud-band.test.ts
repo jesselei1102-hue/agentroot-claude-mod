@@ -5,8 +5,8 @@ const BAND = { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 120
 const PANE = { title: 'AgentZero · Review', isFocused: false, bodyColumns: 60, placement: 'dock' as const, scroll: { offset: 0, bodyRows: 30 }, view: {} }
 const EMPTY = JSON.stringify({ ...SNAPSHOT, pending: [] })
 
-async function bandSource(ui: { find: (q: { type: string }) => Promise<{ props: Record<string, unknown> } | undefined> }) {
-  return String((await ui.find({ type: 'Svg' }))?.props.source ?? '')
+async function bandText(ui: { findAll: (q: { type: string }) => Promise<{ text?: string }[]> }) {
+  return (await ui.findAll({ type: 'Text' })).map(t => String(t.text ?? '')).join('')
 }
 
 for (const surface of ['desktop', 'terminal'] as const) {
@@ -14,15 +14,15 @@ for (const surface of ['desktop', 'terminal'] as const) {
     world(on)
     await $.session.start(START)
     const ui = await $.ui.mount({ plugin: 'agentzero', surface, component: 'AbovePrompt', props: BAND })
-    if (surface === 'desktop') {
-      const svg = await ui.find({ type: 'Svg' })
-      expect(svg?.props.alt).toBe('AgentZero memory: 3 active, 1 waiting')
-      expect(String(svg?.props.source)).toContain('context 41%')
-    } else {
-      expect(await ui.find({ text: '3 active' })).toBeDefined()
-      expect(await ui.find({ text: 'context 41%' })).toBeDefined()
-    }
+    expect(await bandText(ui)).toBe('AgentZero3 active · 1 waiting · hot set 3 min ago · context 41%'.replace('3 min ago', await hotSetAgo(ui)))
+    expect((await ui.find({ type: 'Text', text: '1 waiting' }))?.props.color).toBe('warning')
+    expect(await ui.find({ type: 'Svg' })).toBeUndefined()
   })
+}
+
+// the fixture's hot-set time is fixed and the test clock is not, so read the relative part back
+async function hotSetAgo(ui: { find: (q: { type: string; text: RegExp }) => Promise<{ text?: string } | undefined> }) {
+  return String((await ui.find({ type: 'Text', text: /^hot set / }))?.text ?? '').slice('hot set '.length)
 }
 
 test('the review button opens the pane and refreshes', async ($, on) => {
@@ -60,7 +60,7 @@ test('no ring when usage has no percent', async ($, on) => {
   w.contextPercent = undefined
   await $.session.start(START)
   const ui = await $.ui.mount({ plugin: 'agentzero', surface: 'desktop', component: 'AbovePrompt', props: BAND })
-  expect(await bandSource(ui)).not.toContain('context')
+  expect(await bandText(ui)).not.toContain('context')
 })
 
 test('a failed hot set shows red in the band', async ($, on) => {
@@ -69,7 +69,7 @@ test('a failed hot set shows red in the band', async ($, on) => {
   w.setRun({ exitCode: 1, stdout: '' })
   await $.prompt.submit(PROMPT('one'))
   const ui = await $.ui.mount({ plugin: 'agentzero', surface: 'desktop', component: 'AbovePrompt', props: BAND })
-  expect(await bandSource(ui)).toContain('hot set not loaded (exit 1)')
+  expect((await ui.find({ type: 'Text', text: 'hot set not loaded (exit 1)' }))?.props.color).toBe('error')
 })
 
 test('/agentzero review opens the pane', async ($, on) => {
@@ -91,18 +91,15 @@ async function mountPane($: any) {
   return $.ui.mount({ plugin: 'agentzero', surface: 'desktop', component: 'Pane', props: PANE, requestId: 'agentzero-review' })
 }
 
-async function sources(ui: any): Promise<string[]> {
-  return (await ui.findAll({ type: 'Svg' })).map((s: any) => String(s.props.source))
-}
-
 test('the pane lists what waits, with keep and reject', async ($, on) => {
   world(on)
   await $.session.start(START)
   const ui = await mountPane($)
-  const svgs = await sources(ui)
-  expect(svgs.length).toBe(2)
-  expect(svgs[0]).toContain('1 waiting')
-  expect(svgs[1]).toContain('周五不部署')
+  expect(await ui.find({ type: 'Svg' })).toBeUndefined()
+  expect(await ui.find({ text: '1 waiting · 0 done' })).toBeDefined()
+  expect(await ui.find({ text: 'Fact' })).toBeDefined()
+  expect(await ui.find({ text: '周五不部署' })).toBeDefined()
+  expect(await ui.find({ text: 'agent proposed it · Oct 4' })).toBeDefined()
   expect(await ui.find({ key: 'az-keep-fact:a' })).toBeDefined()
   expect(await ui.find({ key: 'az-reject-fact:a' })).toBeDefined()
 })
@@ -115,9 +112,8 @@ test('keep runs the kernel and marks the item kept', async ($, on) => {
   w.snapshotJson = EMPTY
   await ui.press({ key: 'az-keep-fact:a' })
   expect(w.runs.at(-1)).toEqual({ argv: ['/w/a0', 'memory', 'review', '--confirm', 'fact:a'], init: { cwd: '/w', timeoutMs: 10000 } })
-  const svgs = await sources(ui)
-  expect(svgs[0]).toContain('1 done')
-  expect(svgs[1]).toContain('✓ Kept')
+  expect(await ui.find({ text: '0 waiting · 1 done' })).toBeDefined()
+  expect((await ui.find({ type: 'Text', text: '✓ Kept' }))?.props.color).toBe('success')
   expect(await ui.find({ key: 'az-keep-fact:a' })).toBeUndefined()
 })
 
@@ -127,7 +123,7 @@ test("a keep that fails shows the kernel's first error line and keeps the button
   await $.session.start(START)
   const ui = await mountPane($)
   await ui.press({ key: 'az-keep-fact:a' })
-  expect((await sources(ui))[1]).toContain('No pending item fact:a')
+  expect((await ui.find({ type: 'Text', text: 'No pending item fact:a' }))?.props.color).toBe('error')
   expect(await ui.find({ key: 'az-keep-fact:a' })).toBeDefined()
 })
 
@@ -138,7 +134,7 @@ test('a keep on an item handled elsewhere shows the error, not all clear', async
   const ui = await mountPane($)
   w.snapshotJson = EMPTY
   await ui.press({ key: 'az-keep-fact:a' })
-  expect((await sources(ui)).join('')).toContain('no item waiting for confirmation')
+  expect(await ui.find({ text: 'no item waiting for confirmation with id fact:a' })).toBeDefined()
   expect(await ui.find({ text: 'Nothing is waiting for you ✓' })).toBeUndefined()
   expect(await ui.find({ key: 'az-keep-fact:a' })).toBeUndefined()
 })
