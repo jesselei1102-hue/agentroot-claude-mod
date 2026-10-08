@@ -196,31 +196,3 @@ test('a Restore that fails keeps the row forgotten and says why', async ($, on) 
   expect((await ui.find({ type: 'Text', text: 'a newer Fact replaced it: Deploy on Mondays.' }))?.props.color).toBe('error')
   expect(await ui.find({ key: 'az-restore-fact:a' })).toBeDefined()
 })
-
-// Three lines a Fact: the sentence, its words, then its date and tags with the button at the
-// right (lab screenshot, 2026-10-08: five loose lines a Fact read as clutter).
-function boxHolding(node: any, pred: (n: any) => boolean): any {
-  for (const c of node?.children ?? []) {
-    if (typeof c !== 'object') continue
-    const found = boxHolding(c, pred)
-    if (found !== undefined) return found
-  }
-  return node?.type === 'Box' && (node.children ?? []).some((c: any) => typeof c === 'object' && pred(c)) ? node : undefined
-}
-
-test('the date, the tags and the button share one line; forgotten joins the tags', async ($, on) => {
-  const w = world(on)
-  w.snapshotJson = json([A, B])
-  w.responder = () => ({ exitCode: 0, stdout: 'forgot: fact:a — x\n' })
-  await $.session.start(START)
-  const ui = await mount($)
-  const tree = await ui.find({ type: 'Box' })
-  const line = boxHolding(tree, n => n.type === 'Button' && n.props.key === 'az-forget-fact:b')
-  expect(JSON.stringify(line)).toContain('Oct 3')
-  expect(line.props.justifyContent).toBe('space-between')
-  await ui.press({ key: 'az-forget-fact:a' })
-  const gone = boxHolding(await ui.find({ type: 'Box' }), n => n.type === 'Button' && n.props.key === 'az-restore-fact:a')
-  expect(JSON.stringify(gone)).toContain('forgotten')
-  expect(JSON.stringify(gone)).toContain('Oct 6')
-  expect((await ui.find({ type: 'Text', text: /^“周五别部署”$/ }))?.props.wrap).toBe('wrap')
-})

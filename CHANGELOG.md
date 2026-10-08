@@ -1,9 +1,5 @@
 # Changelog
 
-## 1.3.0-rc.6 — kernel 0.4.7 (333cd6e)
-
-- Tighter rows. A Fact reads in three lines: the sentence; its words (now wrapping in full); its date and tags, with `forgotten` among them and the `Forget` or `Restore` button at the right of that line. A Review item: the sentence, then its kind, provenance and date with `✓ Keep` `✗ Reject` at the right.
-
 ## 1.3.0-rc.5 — kernel 0.4.7 (333cd6e)
 
 - `Forget` acts on one press; there is no confirmation step, since `Restore` undoes it. In the desktop app every press in a pane after the first takes two clicks (the engine retires the drawing's buttons with a redraw the app does not receive; reported upstream), so each step saved is a double click saved.

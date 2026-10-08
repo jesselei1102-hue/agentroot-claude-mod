@@ -157,20 +157,3 @@ test('each item in the Review pane is one column', async ($, on) => {
   expect(boxes.length > 0).toBe(true)
   for (const b of boxes) expect(b.props.flexDirection).toBe('column')
 })
-
-test('in the Review pane the kind, provenance and date share a line with Keep and Reject', async ($, on) => {
-  world(on)
-  await $.session.start(START)
-  const ui = await mountPane($)
-  const find = (node: any): any => {
-    for (const c of node?.children ?? []) {
-      if (typeof c !== 'object') continue
-      const f = find(c)
-      if (f !== undefined) return f
-    }
-    const hasKeep = JSON.stringify(node?.children ?? []).includes('"az-keep-fact:a"')
-    return node?.type === 'Box' && node.props?.justifyContent === 'space-between' && hasKeep ? node : undefined
-  }
-  const line = find(await ui.find({ type: 'Box' }))
-  expect(JSON.stringify(line)).toContain('Fact · agent proposed it · Oct 4')
-})

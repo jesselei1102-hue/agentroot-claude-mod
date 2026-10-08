@@ -151,15 +151,11 @@ export function registerHud(on: On): void {
           return (
             <Box borderStyle="round" borderDimColor={true} paddingX={1} flexDirection="column">
               <Text strikethrough={rejected} dimColor={rejected}>{row.item.sentence}</Text>
-              <Box flexDirection="row" justifyContent="space-between" alignItems="center">
-                <Box flexShrink={1}>
-                  <Text dimColor={true} wrap="wrap">{`${KIND_LABEL[row.item.kind] ?? row.item.kind} · ${reviewMeta(row.item)}`}</Text>
-                </Box>
-                {row.actionable && buttons(row.item)}
-              </Box>
+              <Text dimColor={true}>{`${KIND_LABEL[row.item.kind] ?? row.item.kind} · ${reviewMeta(row.item)}`}</Text>
               {row.state === 'kept' && <Text color="success">✓ Kept</Text>}
               {rejected && <Text dimColor={true}>✗ Rejected</Text>}
               {row.state === 'failed' && <Text color="error">{row.message ?? ''}</Text>}
+              {row.actionable && buttons(row.item)}
             </Box>
           )
         })}
@@ -237,20 +233,24 @@ export function registerHud(on: On): void {
           return (
             <Box borderStyle="round" borderDimColor={true} paddingX={1} flexDirection="column">
               <Text strikethrough={gone} dimColor={gone}>{row.fact.sentence}</Text>
-              <Text dimColor={true} wrap="wrap">{meta.words}</Text>
-              <Box flexDirection="row" justifyContent="space-between" alignItems="center">
-                <Box flexDirection="row" flexWrap="wrap" flexShrink={1}>
-                  {meta.tags.map(seg => (seg.color !== undefined ? <Text color={seg.color}>{seg.text}</Text> : <Text dimColor={true}>{seg.text}</Text>))}
-                  {gone && <Text dimColor={true}>{meta.tags.length > 0 ? ' · forgotten' : 'forgotten'}</Text>}
-                </Box>
-                {gone ? (
-                  <Button key={`az-restore-${id}`} label="Restore" plain={true} dimColor={true} onPress={() => restore(row.fact)} />
-                ) : (
-                  row.actionable && <Button key={`az-forget-${id}`} label="Forget" plain={true} dimColor={true} onPress={() => forget(row.fact)} />
-                )}
+              <Text dimColor={true}>{meta.words}</Text>
+              <Box flexDirection="row">
+                {meta.tags.map(seg => (seg.color !== undefined ? <Text color={seg.color}>{seg.text}</Text> : <Text dimColor={true}>{seg.text}</Text>))}
               </Box>
+              {gone && <Text dimColor={true}>forgotten</Text>}
               {(row.state === 'failed' || gone) && row.message !== null && <Text color="error">{row.message}</Text>}
               {row.citedBy.length > 0 && <Text color="warning">{cited(row.citedBy)}</Text>}
+              {gone ? (
+                <Box flexDirection="row">
+                  <Button key={`az-restore-${id}`} label="Restore" plain={true} dimColor={true} onPress={() => restore(row.fact)} />
+                </Box>
+              ) : (
+                row.actionable && (
+                  <Box flexDirection="row">
+                    <Button key={`az-forget-${id}`} label="Forget" plain={true} dimColor={true} onPress={() => forget(row.fact)} />
+                  </Box>
+                )
+              )}
             </Box>
           )
         })}
