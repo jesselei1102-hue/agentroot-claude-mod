@@ -188,3 +188,7 @@ The rule from A holds: a failure never blocks work, and the pane never claims "n
 ## Amendment (2026-10-08, operator): Restore
 
 The operator asked for a way to undo a forget. A forgotten row shows `Restore` (plain) until the pane closes. `tools/restore.py WORKSPACE fact:<id>` sets `status: retired` back to `active` with the kernel's entry writer, so the Fact returns as it was; it refuses an active or unknown Fact, and one a newer Fact with the same `effective_fact_key` replaced. On success the row is active again and the note says `Restored, apply again: "…"` — unless the forget was not yet told to the assistant, in which case both are dropped. On failure the row stays forgotten with the reason in red. Restore does not relink `graph.yaml` entities that the forget unlinked.
+
+## Amendment (2026-10-08, operator): one press
+
+`Forget` acts on one press, with no `Forget this Fact?` step: `Restore` undoes a forget, and in the desktop app every press after the first in a pane takes two clicks (see native-ui-spec.md, known fault).

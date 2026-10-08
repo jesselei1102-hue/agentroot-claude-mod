@@ -18,7 +18,6 @@ const last = (w: ReturnType<typeof world>) => (w.contexts.at(-1) ?? []).join('\n
 async function forgetX($: any) {
   const ui = await $.ui.mount({ plugin: 'agentzero', surface: 'desktop', component: 'Pane', props: MEMORY, requestId: 'agentzero-memory' })
   await ui.press({ key: 'az-forget-fact:x' })
-  await ui.press({ key: 'az-forget-yes-fact:x' })
 }
 
 async function review($: any, key: string) {
@@ -105,7 +104,6 @@ test('a forget undone by Restore before the next prompt says nothing', async ($,
   await $.prompt.submit(PROMPT('one'))
   const ui = await $.ui.mount({ plugin: 'agentzero', surface: 'desktop', component: 'Pane', props: MEMORY, requestId: 'agentzero-memory' })
   await ui.press({ key: 'az-forget-fact:x' })
-  await ui.press({ key: 'az-forget-yes-fact:x' })
   await ui.press({ key: 'az-restore-fact:x' })
   await $.prompt.submit(PROMPT('two'))
   expect(last(w)).not.toContain(NOTE)

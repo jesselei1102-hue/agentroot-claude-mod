@@ -44,18 +44,18 @@ for (const surface of ['desktop', 'terminal'] as const) {
   })
 }
 
-test('forget asks first, cancel undoes', async ($, on) => {
+// One press: Restore undoes a forget, and in the desktop app every press after the first in a
+// pane took two clicks (an engine fault), so a confirmation step cost the most (operator, 2026-10-08).
+test('Forget runs at once, with no confirmation', async ($, on) => {
   const w = world(on)
   w.snapshotJson = json([A, B])
+  w.responder = () => ({ exitCode: 0, stdout: 'forgot: fact:a — Never deploy on Fridays.\n' })
   await $.session.start(START)
   const ui = await mount($)
   await ui.press({ key: 'az-forget-fact:a' })
-  expect(await ui.find({ key: 'az-forget-yes-fact:a' })).toBeDefined()
-  expect((await ui.find({ type: 'Text', text: 'Forget this Fact?' }))?.props.color).toBe('error')
-  expect(w.runs).toEqual([])
-  await ui.press({ key: 'az-forget-no-fact:a' })
-  expect(await ui.find({ key: 'az-forget-fact:a' })).toBeDefined()
-  expect(await ui.find({ key: 'az-forget-yes-fact:a' })).toBeUndefined()
+  expect(w.runs.at(-1)?.argv).toEqual(['/w/a0', 'memory', 'forget', 'fact:a'])
+  expect(await ui.find({ text: 'Forget this Fact?' })).toBeUndefined()
+  expect(await ui.find({ key: 'az-restore-fact:a' })).toBeDefined()
 })
 
 test('forget runs the kernel and keeps the row', async ($, on) => {
@@ -64,9 +64,8 @@ test('forget runs the kernel and keeps the row', async ($, on) => {
   w.responder = () => ({ exitCode: 0, stdout: 'forgot: fact:a — Never deploy on Fridays.\n' })
   await $.session.start(START)
   const ui = await mount($)
-  await ui.press({ key: 'az-forget-fact:a' })
   w.snapshotJson = json([B])
-  await ui.press({ key: 'az-forget-yes-fact:a' })
+  await ui.press({ key: 'az-forget-fact:a' })
   expect(w.runs.at(-1)).toEqual({ argv: ['/w/a0', 'memory', 'forget', 'fact:a'], init: { cwd: '/w', timeoutMs: 10000 } })
   expect(await ui.find({ text: '1 active · 0 in hot set · 1 forgotten' })).toBeDefined()
   expect((await ui.find({ type: 'Text', text: 'Never deploy on Fridays.' }))?.props.strikethrough).toBe(true)
@@ -82,7 +81,6 @@ test('a forgotten row survives a failed refresh', async ($, on) => {
   const ui = await mount($)
   w.snapshotJson = 'not json'
   await ui.press({ key: 'az-forget-fact:a' })
-  await ui.press({ key: 'az-forget-yes-fact:a' })
   expect(await ui.find({ text: '1 active · 0 in hot set · 1 forgotten' })).toBeDefined()
   expect(await ui.find({ text: 'forgotten' })).toBeDefined()
 })
@@ -94,7 +92,6 @@ test('a failed forget shows the reason and offers Forget again', async ($, on) =
   await $.session.start(START)
   const ui = await mount($)
   await ui.press({ key: 'az-forget-fact:a' })
-  await ui.press({ key: 'az-forget-yes-fact:a' })
   expect((await ui.find({ type: 'Text', text: 'no active fact:a' }))?.props.color).toBe('error')
   expect(await ui.find({ key: 'az-forget-fact:a' })).toBeDefined()
 })
@@ -160,10 +157,9 @@ test('every button in both panes is plain', async ($, on) => {
   w.snapshotJson = JSON.stringify({ ...SNAPSHOT, facts: [A, B] })
   await $.session.start(START)
   const memory = await mount($)
-  await memory.press({ key: 'az-forget-fact:a' })
   const review = await $.ui.mount({ plugin: 'agentzero', surface: 'desktop', component: 'Pane', props: { ...PANE, title: 'AgentZero · Review' }, requestId: 'agentzero-review' })
   const buttons = [...(await memory.findAll({ type: 'Button' })), ...(await review.findAll({ type: 'Button' }))]
-  expect(buttons.length).toBe(5)
+  expect(buttons.length).toBe(4)
   for (const b of buttons) expect([b.props.key, b.props.plain]).toEqual([b.props.key, true])
 })
 
@@ -175,9 +171,8 @@ test('Restore brings a forgotten Fact back and offers Forget again', async ($, o
     : { exitCode: 0, stdout: 'forgot: fact:a — Never deploy on Fridays.\n' })
   await $.session.start(START)
   const ui = await mount($)
-  await ui.press({ key: 'az-forget-fact:a' })
   w.snapshotJson = json([B])
-  await ui.press({ key: 'az-forget-yes-fact:a' })
+  await ui.press({ key: 'az-forget-fact:a' })
   w.snapshotJson = json([A, B])
   await ui.press({ key: 'az-restore-fact:a' })
   const run = w.runs.at(-1)!
@@ -197,22 +192,7 @@ test('a Restore that fails keeps the row forgotten and says why', async ($, on) 
   await $.session.start(START)
   const ui = await mount($)
   await ui.press({ key: 'az-forget-fact:a' })
-  await ui.press({ key: 'az-forget-yes-fact:a' })
   await ui.press({ key: 'az-restore-fact:a' })
   expect((await ui.find({ type: 'Text', text: 'a newer Fact replaced it: Deploy on Mondays.' }))?.props.color).toBe('error')
   expect(await ui.find({ key: 'az-restore-fact:a' })).toBeDefined()
-})
-
-// The desktop kept showing a drawing whose buttons a later, identical redraw had retired: after
-// the first press every click was lost once (lab, 2026-10-08). Each drawing now differs.
-test('each drawing of a pane differs from the last', async ($, on) => {
-  const w = world(on)
-  w.snapshotJson = json([A, B])
-  await $.session.start(START)
-  const ui = await mount($)
-  const stamp = async () => (await ui.find({ key: 'az-drawing' }))?.text
-  const first = await stamp()
-  await ui.press({ key: 'az-forget-fact:a' })
-  expect(first).toBeDefined()
-  expect(await stamp()).not.toBe(first)
 })

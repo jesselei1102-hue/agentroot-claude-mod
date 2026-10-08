@@ -1,9 +1,13 @@
 # Changelog
 
+## 1.3.0-rc.5 — kernel 0.4.7 (333cd6e)
+
+- `Forget` acts on one press; there is no confirmation step, since `Restore` undoes it. In the desktop app every press in a pane after the first takes two clicks (the engine retires the drawing's buttons with a redraw the app does not receive; reported upstream), so each step saved is a double click saved.
+- rc.4's hidden stamp is removed: it did not help.
+
 ## 1.3.0-rc.4 — kernel 0.4.7 (333cd6e)
 
 - **Restore.** A Fact forgotten in the Memory pane shows `Restore` until the pane closes. It runs `tools/restore.py`, which sets the Fact's status back to active through the kernel's own entry writer: same id, words and dates. It refuses when a newer Fact with the same fact-key has replaced it since. The assistant is told "Restored, apply again"; a forget restored before the next message is simply not mentioned. (A forget also unlinks the Fact from `graph.yaml`; Restore does not relink it.)
-- Every drawing of a pane carries a hidden, changing stamp. After the first press the desktop kept a drawing whose buttons a later, identical redraw had retired, and every later click was lost once.
 
 ## 1.3.0-rc.3 — kernel 0.4.7 (333cd6e)
 
