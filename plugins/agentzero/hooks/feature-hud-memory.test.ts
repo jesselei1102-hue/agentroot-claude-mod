@@ -138,3 +138,16 @@ test('every way of opening a pane asks for the keyboard', async ($, on) => {
   expect(w.opened).toEqual(['agentzero-memory', 'agentzero-review', 'agentzero-memory', 'agentzero-review'])
   expect(w.openFocus).toEqual([true, true, true, true])
 })
+
+// A row laid out side by side let a long line push the buttons out of the pane (lab, 2026-10-08).
+test('each Fact is one column, with its words and its date on their own lines', async ($, on) => {
+  const w = world(on)
+  w.snapshotJson = json([A, B])
+  await $.session.start(START)
+  const ui = await mount($)
+  expect(await ui.find({ type: 'Text', text: /^“周五别部署”$/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /^Oct 6$/ })).toBeDefined()
+  const boxes = (await ui.findAll({ type: 'Box' })).filter((b: any) => b.props.borderStyle === 'round')
+  expect(boxes.length > 0).toBe(true)
+  for (const b of boxes) expect(b.props.flexDirection).toBe('column')
+})

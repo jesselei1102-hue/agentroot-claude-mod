@@ -109,3 +109,7 @@ Card tones map to theme keys: green → `success`, amber → `warning`, blue →
 
 - The panes feel bare without the coloured chips, and the operator misses at a glance what is in the hot set.
 - The desktop draws theme keys as plain text colour: then the colours need raw values per theme.
+
+## Amendment (2026-10-08, lab)
+
+Rows are one column, not a row with the buttons on the right: in the desktop app a long line made the row wider than the pane and pushed `Forget` out of sight. A Fact's box reads, top to bottom: the sentence; its words (or `Inferred by the assistant, kept by you`); `Oct 6 · in hot set · task`; then its state lines and buttons. A Review item: the sentence; `<Kind> · <provenance> · <date>`; state; `Keep` `Reject`. The app's theme keys draw in colour on the desktop (`in hot set` in blue, seen).

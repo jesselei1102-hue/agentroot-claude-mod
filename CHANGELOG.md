@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.0-rc.2 — kernel 0.4.7 (333cd6e)
+
+- Each item in the Review and Memory panes is one column: the sentence, the words (or provenance), then the date and tags, then the buttons. Laid out side by side, a long quote pushed the row wider than the pane and the `Forget` button out of sight (lab, 2026-10-08).
+
 ## 1.3.0-rc.1 — kernel 0.4.7 (333cd6e)
 
 - **The HUD is drawn with the app's own components.** The band, the Review and Memory panes and the cards use the app's text, borders and buttons instead of SVG images, so they take the app's font, sizes and theme. Colour is a theme key and means one thing each: amber waits for you, red failed or is being confirmed, green saved, blue in the hot set or a skill. The band loses its black name pill and the ring; "0 waiting" is no longer shown. Sentences wrap in full in the panes. See `docs/native-ui-spec.md`.

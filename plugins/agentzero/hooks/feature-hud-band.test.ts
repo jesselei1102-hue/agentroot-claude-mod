@@ -147,3 +147,13 @@ test('with no snapshot the pane says why, not all clear', async ($, on) => {
   expect(await ui.find({ text: 'memory unreadable (unreadable snapshot)' })).toBeDefined()
   expect(await ui.find({ text: 'Nothing is waiting for you ✓' })).toBeUndefined()
 })
+
+// A row laid out side by side let a long line push the buttons out of the pane (lab, 2026-10-08).
+test('each item in the Review pane is one column', async ($, on) => {
+  world(on)
+  await $.session.start(START)
+  const ui = await mountPane($)
+  const boxes = (await ui.findAll({ type: 'Box' })).filter((b: any) => b.props.borderStyle === 'round')
+  expect(boxes.length > 0).toBe(true)
+  for (const b of boxes) expect(b.props.flexDirection).toBe('column')
+})

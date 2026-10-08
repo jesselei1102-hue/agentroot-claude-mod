@@ -148,17 +148,12 @@ export function registerHud(on: On): void {
         {rows.map(row => {
           const rejected = row.state === 'rejected'
           return (
-            <Box borderStyle="round" borderDimColor={true} paddingX={1} flexDirection="row" gap={1}>
-              <Box flexDirection="column" flexGrow={1} flexShrink={1}>
-                <Box flexDirection="row" gap={1}>
-                  <Text dimColor={true}>{KIND_LABEL[row.item.kind] ?? row.item.kind}</Text>
-                  <Text strikethrough={rejected} dimColor={rejected}>{row.item.sentence}</Text>
-                </Box>
-                <Text dimColor={true}>{reviewMeta(row.item)}</Text>
-                {row.state === 'kept' && <Text color="success">✓ Kept</Text>}
-                {rejected && <Text dimColor={true}>✗ Rejected</Text>}
-                {row.state === 'failed' && <Text color="error">{row.message ?? ''}</Text>}
-              </Box>
+            <Box borderStyle="round" borderDimColor={true} paddingX={1} flexDirection="column">
+              <Text strikethrough={rejected} dimColor={rejected}>{row.item.sentence}</Text>
+              <Text dimColor={true}>{`${KIND_LABEL[row.item.kind] ?? row.item.kind} · ${reviewMeta(row.item)}`}</Text>
+              {row.state === 'kept' && <Text color="success">✓ Kept</Text>}
+              {rejected && <Text dimColor={true}>✗ Rejected</Text>}
+              {row.state === 'failed' && <Text color="error">{row.message ?? ''}</Text>}
               {row.actionable && buttons(row.item)}
             </Box>
           )
@@ -220,26 +215,29 @@ export function registerHud(on: On): void {
         {rows.map((row: MemoryRow) => {
           const id = row.fact.id
           const gone = row.state === 'forgotten'
+          const meta = factMeta(row)
           return (
-            <Box borderStyle="round" borderDimColor={true} paddingX={1} flexDirection="row" gap={1}>
-              <Box flexDirection="column" flexGrow={1} flexShrink={1}>
-                <Text strikethrough={gone} dimColor={gone}>{row.fact.sentence}</Text>
-                <Box flexDirection="row" flexWrap="wrap">
-                  {factMeta(row).map(seg => (seg.color !== undefined ? <Text color={seg.color}>{seg.text}</Text> : <Text dimColor={true}>{seg.text}</Text>))}
-                </Box>
-                {gone && <Text dimColor={true}>forgotten</Text>}
-                {row.state === 'failed' && <Text color="error">{row.message ?? ''}</Text>}
-                {row.citedBy.length > 0 && <Text color="warning">{cited(row.citedBy)}</Text>}
-                {row.state === 'confirming' && (
-                  <Box flexDirection="row" gap={1} alignItems="center">
-                    <Text color="error">Forget this Fact?</Text>
-                    <Button key={`az-forget-yes-${id}`} label="Forget" onPress={() => forget(row.fact)} />
-                    <Button key={`az-forget-no-${id}`} label="Cancel" onPress={() => cancel(row.fact)} />
-                  </Box>
-                )}
+            <Box borderStyle="round" borderDimColor={true} paddingX={1} flexDirection="column">
+              <Text strikethrough={gone} dimColor={gone}>{row.fact.sentence}</Text>
+              <Text dimColor={true}>{meta.words}</Text>
+              <Box flexDirection="row">
+                {meta.tags.map(seg => (seg.color !== undefined ? <Text color={seg.color}>{seg.text}</Text> : <Text dimColor={true}>{seg.text}</Text>))}
               </Box>
-              {row.actionable && row.state !== 'confirming' && (
-                <Button key={`az-forget-${id}`} label="Forget" onPress={() => ask(row.fact)} />
+              {gone && <Text dimColor={true}>forgotten</Text>}
+              {row.state === 'failed' && <Text color="error">{row.message ?? ''}</Text>}
+              {row.citedBy.length > 0 && <Text color="warning">{cited(row.citedBy)}</Text>}
+              {row.state === 'confirming' ? (
+                <Box flexDirection="row" gap={1} alignItems="center">
+                  <Text color="error">Forget this Fact?</Text>
+                  <Button key={`az-forget-yes-${id}`} label="Forget" onPress={() => forget(row.fact)} />
+                  <Button key={`az-forget-no-${id}`} label="Cancel" onPress={() => cancel(row.fact)} />
+                </Box>
+              ) : (
+                row.actionable && (
+                  <Box flexDirection="row">
+                    <Button key={`az-forget-${id}`} label="Forget" onPress={() => ask(row.fact)} />
+                  </Box>
+                )
               )}
             </Box>
           )

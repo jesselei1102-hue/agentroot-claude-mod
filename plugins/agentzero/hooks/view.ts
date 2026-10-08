@@ -29,15 +29,19 @@ export function shortDate(iso: string | null): string | null {
 
 export type Segment = { text: string; color?: string }
 
-// The dim line under a Fact: its words, its date, and whether the hot set holds it.
-export function factMeta(row: MemoryRow): Segment[] {
+// The lines under a Fact: its words on one, then its date and tags (in the hot set, task).
+// Apart, so a long quote wraps on its own and no line starts with a stray " · ".
+export function factMeta(row: MemoryRow): { words: string; tags: Segment[] } {
   const f = row.fact
-  const parts: Segment[] = [{ text: f.said !== null ? `“${f.said}”` : 'Inferred by the assistant, kept by you' }]
+  const tags: Segment[] = []
   const date = shortDate(f.createdAt)
-  if (date !== null) parts.push({ text: date })
-  if (f.inHotSet && row.state !== 'forgotten') parts.push({ text: 'in hot set', color: 'suggestion' })
-  if (f.scope === 'task') parts.push({ text: 'task' })
-  return parts.flatMap((p, i) => (i === 0 ? [p] : [{ text: ' · ' }, p]))
+  if (date !== null) tags.push({ text: date })
+  if (f.inHotSet && row.state !== 'forgotten') tags.push({ text: 'in hot set', color: 'suggestion' })
+  if (f.scope === 'task') tags.push({ text: 'task' })
+  return {
+    words: f.said !== null ? `“${f.said}”` : 'Inferred by the assistant, kept by you',
+    tags: tags.flatMap((t, i) => (i === 0 ? [t] : [{ text: ' · ' }, t])),
+  }
 }
 
 export function reviewMeta(item: PendingItem): string {
