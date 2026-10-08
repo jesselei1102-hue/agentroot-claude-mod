@@ -37,3 +37,13 @@ test('reviewMeta: provenance and date', () => {
   expect(reviewMeta({ id: 'fact:x', kind: 'fact', sentence: 's', provenance: 'agent proposed it', createdAt: '2026-10-04T10:49:18+08:00' })).toBe('agent proposed it · Oct 4')
   expect(reviewMeta({ id: 'fact:x', kind: 'fact', sentence: 's', provenance: 'agent proposed it', createdAt: null })).toBe('agent proposed it')
 })
+
+// The desktop app does not wrap a long Chinese line in a pane; it cut the quote at the edge
+// (lab, 2026-10-08). The quote is cut here instead, Chinese counting double.
+test('factMeta cuts long words, counting Chinese double', () => {
+  const zh = factMeta(row(fact({ said: '记得这个项目无论我讲什么你都要用英文回复，还要简短，不要啰嗦，谢谢' })))
+  expect(zh.words).toBe('“记得这个项目无论我讲什么你都要用英文回复，还要…”')
+  const en = factMeta(row(fact({ said: 'Use pnpm in this project for every install and every script, never npm.' })))
+  expect(en.words).toBe('“Use pnpm in this project for every install and…”')
+  expect(factMeta(row(fact({ said: '用 pnpm' }))).words).toBe('“用 pnpm”')
+})

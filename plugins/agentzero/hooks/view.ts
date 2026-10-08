@@ -29,6 +29,24 @@ export function shortDate(iso: string | null): string | null {
 
 export type Segment = { text: string; color?: string }
 
+const WORDS_MAX = 48
+
+// The app does not wrap a long Chinese line in a pane, so long words are cut here: a Chinese
+// (or other full-width) character counts 2, any other 1, and one unit is kept for the "…".
+function cutWords(s: string): string {
+  const width = (ch: string) => ((ch.codePointAt(0) ?? 0) >= 0x2e80 ? 2 : 1)
+  const chars = Array.from(s)
+  if (chars.reduce((n, ch) => n + width(ch), 0) <= WORDS_MAX) return s
+  let used = 0
+  let out = ''
+  for (const ch of chars) {
+    if (used + width(ch) > WORDS_MAX - 1) break
+    used += width(ch)
+    out += ch
+  }
+  return out.trimEnd() + '…'
+}
+
 // The lines under a Fact: its words on one, then its date and tags (in the hot set, task).
 // Apart, so a long quote wraps on its own and no line starts with a stray " · ".
 export function factMeta(row: MemoryRow): { words: string; tags: Segment[] } {
@@ -39,7 +57,7 @@ export function factMeta(row: MemoryRow): { words: string; tags: Segment[] } {
   if (f.inHotSet && row.state !== 'forgotten') tags.push({ text: 'in hot set', color: 'suggestion' })
   if (f.scope === 'task') tags.push({ text: 'task' })
   return {
-    words: f.said !== null ? `“${f.said}”` : 'Inferred by the assistant, kept by you',
+    words: f.said !== null ? `“${cutWords(f.said)}”` : 'Inferred by the assistant, kept by you',
     tags: tags.flatMap((t, i) => (i === 0 ? [t] : [{ text: ' · ' }, t])),
   }
 }

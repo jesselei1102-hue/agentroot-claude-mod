@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.0-rc.7 — kernel 0.4.7 (333cd6e)
+
+- Back to rc.5's rows (rc.6's one-line tags and button read worse; reverted). A Fact's words in the Memory pane are cut at 48 width units (Chinese counting 2) with "…": the desktop app does not wrap a long Chinese line in a pane and cut it at the edge.
+
 ## 1.3.0-rc.5 — kernel 0.4.7 (333cd6e)
 
 - `Forget` acts on one press; there is no confirmation step, since `Restore` undoes it. In the desktop app every press in a pane after the first takes two clicks (the engine retires the drawing's buttons with a redraw the app does not receive; reported upstream), so each step saved is a double click saved.
