@@ -9,7 +9,7 @@ export type RawOpen = { [toolUseId: string]: boolean }
 export type MemoryRowState = 'confirming' | 'forgotten' | 'failed'
 export type MemoryResult = { fact: Fact; outcome: MemoryRowState; message: string; citedBy: string[] }
 export type MemoryResults = { [id: string]: MemoryResult }
-export type PaneNote = { verb: 'forgot' | 'kept' | 'rejected'; kind: string; sentence: string }
+export type PaneNote = { verb: 'forgot' | 'restored' | 'kept' | 'rejected'; kind: string; sentence: string }
 
 declare module 'claude-code' {
   interface PluginState {

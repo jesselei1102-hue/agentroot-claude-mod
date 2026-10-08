@@ -95,3 +95,18 @@ test('a failed hot-set load still carries the note', async ($, on) => {
   await $.prompt.submit(PROMPT('two'))
   expect(last(w)).toContain('Forgotten, stop applying: "Never deploy on Fridays."')
 })
+
+test('a forget undone by Restore before the next prompt says nothing', async ($, on) => {
+  const w = world(on)
+  kernel(w, { exitCode: 0, stdout: 'forgot: fact:x — Never deploy on Fridays.\n' })
+  const base = w.responder!
+  w.responder = argv => (String(argv[1]).endsWith('/tools/restore.py') ? { exitCode: 0, stdout: 'restored: fact:x — Never deploy on Fridays.\n' } : base(argv))
+  await $.session.start(START)
+  await $.prompt.submit(PROMPT('one'))
+  const ui = await $.ui.mount({ plugin: 'agentzero', surface: 'desktop', component: 'Pane', props: MEMORY, requestId: 'agentzero-memory' })
+  await ui.press({ key: 'az-forget-fact:x' })
+  await ui.press({ key: 'az-forget-yes-fact:x' })
+  await ui.press({ key: 'az-restore-fact:x' })
+  await $.prompt.submit(PROMPT('two'))
+  expect(last(w)).not.toContain(NOTE)
+})

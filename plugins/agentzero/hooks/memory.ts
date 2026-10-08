@@ -26,7 +26,7 @@ export function memoryRows(
     return {
       fact,
       state: r.outcome,
-      message: r.outcome === 'failed' ? r.message : null,
+      message: r.outcome === 'confirming' || r.message === '' ? null : r.message,
       citedBy: r.citedBy,
       actionable: listed && r.outcome === 'failed',
     }
@@ -78,4 +78,14 @@ export function forgetResult(fact: Fact, ran: RunResult | Error): MemoryResult {
     return { fact, outcome: 'forgotten', message: '', citedBy }
   }
   return { fact, outcome: 'failed', message: firstLine(ran.stderr) || firstLine(ran.stdout) || `exit ${ran.exitCode}`, citedBy: [] }
+}
+
+// Restore: success (exit 0 and a `restored:` line) clears the row's result, so the Fact is
+// active again; a failure keeps it forgotten, with the reason.
+export function restoreResult(fact: Fact, ran: RunResult | Error): MemoryResult | null {
+  if (ran instanceof Error) {
+    return { fact, outcome: 'forgotten', message: /time/i.test(ran.message) ? 'timed out' : 'could not run', citedBy: [] }
+  }
+  if (ran.exitCode === 0 && ran.stdout.split('\n').some(l => l.startsWith('restored:'))) return null
+  return { fact, outcome: 'forgotten', message: firstLine(ran.stderr) || firstLine(ran.stdout) || `exit ${ran.exitCode}`, citedBy: [] }
 }

@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 import type { Fact, MemoryResult, MemoryResults } from '../types'
-import { MEMORY_ROW_CAP, cancelForget, forgetArgv, forgetResult, memoryRows, mergeMemory } from './memory'
+import { MEMORY_ROW_CAP, cancelForget, forgetArgv, forgetResult, memoryRows, mergeMemory, restoreResult } from './memory'
 
 const fact = (id: string, createdAt: string | null, inHotSet = false): Fact => ({
   id: `fact:${id}`, sentence: id, said: null, author: 'human', createdAt, scope: 'project', inHotSet,
@@ -90,4 +90,15 @@ test('forgetResult: failures', () => {
   expect(forgetResult(a, { exitCode: 2, stdout: '', stderr: '' }).message).toBe('exit 2')
   expect(forgetResult(a, new Error('timed out after 10000 ms')).message).toBe('timed out')
   expect(forgetResult(a, new Error('denied')).message).toBe('could not run')
+})
+
+test('restoreResult: success clears the row; a failure keeps it forgotten with the reason', () => {
+  expect(restoreResult(a, { exitCode: 0, stdout: 'restored: fact:a — a\n', stderr: '' })).toBeNull()
+  expect(restoreResult(a, { exitCode: 1, stdout: '', stderr: 'a newer Fact replaced it: b\n' })).toEqual(result(a, 'forgotten', 'a newer Fact replaced it: b'))
+  expect(restoreResult(a, new Error('timed out')).message).toBe('timed out')
+})
+
+test('rows: a forgotten row carries its restore failure', () => {
+  const [, row] = memoryRows([a], { 'fact:b': result(b, 'forgotten', 'a newer Fact replaced it: x') }).rows
+  expect([row.state, row.message]).toEqual(['forgotten', 'a newer Fact replaced it: x'])
 })

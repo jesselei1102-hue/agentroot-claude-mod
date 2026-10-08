@@ -184,3 +184,7 @@ The rule from A holds: a failure never blocks work, and the pane never claims "n
 - The operator opens the pane only to look, never to forget: the Forget button is noise, and the pane should be read-only.
 - Fact counts grow past 200 in daily use: the list needs search or grouping, not a cap.
 - The assistant ignores the note and keeps applying a forgotten Fact: the note must be stronger, or the hot set must reload after a pane change.
+
+## Amendment (2026-10-08, operator): Restore
+
+The operator asked for a way to undo a forget. A forgotten row shows `Restore` (plain) until the pane closes. `tools/restore.py WORKSPACE fact:<id>` sets `status: retired` back to `active` with the kernel's entry writer, so the Fact returns as it was; it refuses an active or unknown Fact, and one a newer Fact with the same `effective_fact_key` replaced. On success the row is active again and the note says `Restored, apply again: "…"` — unless the forget was not yet told to the assistant, in which case both are dropped. On failure the row stays forgotten with the reason in red. Restore does not relink `graph.yaml` entities that the forget unlinked.

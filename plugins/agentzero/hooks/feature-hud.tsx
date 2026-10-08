@@ -3,10 +3,10 @@ import type { On } from 'claude-code'
 import type { Fact, HudState, MemoryResults, PaneNote, PaneResults, PendingItem, RawOpen } from '../types'
 import { bandModel } from './band'
 import { cardForCall, groupCard, type CallLike, type Card } from './cards'
-import { MEMORY_PANE, MEMORY_TITLE, cancelForget, forgetArgv, forgetResult, memoryRows, mergeMemory, type MemoryRow } from './memory'
+import { MEMORY_PANE, MEMORY_TITLE, cancelForget, forgetArgv, forgetResult, memoryRows, mergeMemory, restoreResult, type MemoryRow } from './memory'
 import { KIND_LABEL, REVIEW_PANE, REVIEW_TITLE, mergeResult, paneResult, paneRows, reviewArgv } from './pane'
 import { locateWorkspace, sessionData, writeMarks } from './session'
-import { EMPTY_HUD, refreshJob, type HudIo } from './snapshot'
+import { EMPTY_HUD, refreshJob, runTool, type HudIo } from './snapshot'
 import type { PillTone } from './band'
 import { factMeta, reviewMeta, themeOf } from './view'
 
@@ -32,6 +32,18 @@ function rawText(call: CallLike): string {
 }
 
 type El = (props: Record<string, unknown>) => never
+
+// The desktop kept showing a drawing whose buttons a later, identical redraw had retired, so a
+// click after a press was lost once (lab, 2026-10-08). A hidden stamp makes every drawing differ.
+let drawings = 0
+function stamp(Box: El, Text: El) {
+  drawings += 1
+  return (
+    <Box key="az-drawing" display="none">
+      <Text>{String(drawings)}</Text>
+    </Box>
+  )
+}
 
 // A tone as Text props: a theme key, dim for grey, nothing for ink.
 function toned(tone: PillTone): Record<string, unknown> {
@@ -160,6 +172,7 @@ export function registerHud(on: On): void {
           )
         })}
         {rows.length === 0 && <Text color="success">Nothing is waiting for you ✓</Text>}
+        {stamp(Box, Text)}
       </Box>
     )
   })
@@ -205,6 +218,21 @@ export function registerHud(on: On): void {
       }
       await refresh()
     }
+    const restore = async (fact: Fact) => {
+      const io = { run: (argv: string[], init: Parameters<typeof $.process.run>[1]) => $.process.run(argv, init), read: (p: string) => $.fs.read(p) as Promise<string>, pluginRoot: $.plugin.root }
+      const result = restoreResult(fact, await runTool(io, workspace, 'restore.py', [fact.id], KEEP_TIMEOUT_MS))
+      if (result === null) {
+        await update($, memoryResultsAtom, m => cancelForget(m, fact.id))
+        // a forget the assistant has not heard of yet is simply withdrawn
+        await update($, paneNotesAtom, notes => {
+          const i = notes.findIndex(n => n.verb === 'forgot' && n.sentence === fact.sentence)
+          return i >= 0 ? notes.filter((_, j) => j !== i) : [...notes, { verb: 'restored', kind: 'fact', sentence: fact.sentence }]
+        })
+      } else {
+        await update($, memoryResultsAtom, m => ({ ...m, [fact.id]: result }))
+      }
+      await refresh()
+    }
     const head = `${active} active · ${inHotSet} in hot set${forgotten > 0 ? ` · ${forgotten} forgotten` : ''}`
     const cited = (skills: string[]) =>
       skills.length === 1
@@ -225,13 +253,17 @@ export function registerHud(on: On): void {
                 {meta.tags.map(seg => (seg.color !== undefined ? <Text color={seg.color}>{seg.text}</Text> : <Text dimColor={true}>{seg.text}</Text>))}
               </Box>
               {gone && <Text dimColor={true}>forgotten</Text>}
-              {row.state === 'failed' && <Text color="error">{row.message ?? ''}</Text>}
+              {(row.state === 'failed' || gone) && row.message !== null && <Text color="error">{row.message}</Text>}
               {row.citedBy.length > 0 && <Text color="warning">{cited(row.citedBy)}</Text>}
               {row.state === 'confirming' ? (
                 <Box flexDirection="row" gap={2} alignItems="center">
                   <Text color="error">Forget this Fact?</Text>
                   <Button key={`az-forget-yes-${id}`} label="✗ Forget" plain={true} onPress={() => forget(row.fact)} />
                   <Button key={`az-forget-no-${id}`} label="Cancel" plain={true} dimColor={true} onPress={() => cancel(row.fact)} />
+                </Box>
+              ) : gone ? (
+                <Box flexDirection="row">
+                  <Button key={`az-restore-${id}`} label="Restore" plain={true} dimColor={true} onPress={() => restore(row.fact)} />
                 </Box>
               ) : (
                 row.actionable && (
@@ -244,6 +276,7 @@ export function registerHud(on: On): void {
           )
         })}
         {hidden > 0 && <Text dimColor={true}>{`+${hidden} older Facts not shown`}</Text>}
+        {stamp(Box, Text)}
       </Box>
     )
   })

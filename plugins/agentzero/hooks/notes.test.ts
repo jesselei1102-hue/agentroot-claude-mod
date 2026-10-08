@@ -22,3 +22,7 @@ test('all three verbs, two forgets', () => {
   ])
   expect(text).toBe([FIRST, 'Forgotten, stop applying: "X"; "Y"', 'Kept, now active: fact "A"', 'Rejected: episode "B"'].join('\n'))
 })
+
+test('a restore is its own line', () => {
+  expect(paneNoteText([{ verb: 'restored', kind: 'fact', sentence: 'Use pnpm.' }])).toBe(`${FIRST}\nRestored, apply again: "Use pnpm."`)
+})

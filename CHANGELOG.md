@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.0-rc.4 — kernel 0.4.7 (333cd6e)
+
+- **Restore.** A Fact forgotten in the Memory pane shows `Restore` until the pane closes. It runs `tools/restore.py`, which sets the Fact's status back to active through the kernel's own entry writer: same id, words and dates. It refuses when a newer Fact with the same fact-key has replaced it since. The assistant is told "Restored, apply again"; a forget restored before the next message is simply not mentioned. (A forget also unlinks the Fact from `graph.yaml`; Restore does not relink it.)
+- Every drawing of a pane carries a hidden, changing stamp. After the first press the desktop kept a drawing whose buttons a later, identical redraw had retired, and every later click was lost once.
+
 ## 1.3.0-rc.3 — kernel 0.4.7 (333cd6e)
 
 - The panes' buttons are plain text buttons again (`✓ Keep`, `✗ Reject`, `Forget`, `✗ Forget`, `Cancel`). A bordered button takes the keyboard when clicked; the redraw after the press removes it, the keyboard falls back to the composer, and the next click into the pane went only to taking the keyboard back ("ui_press not handled" in the app's log). rc.3 of 1.2 had plain buttons and took one click.

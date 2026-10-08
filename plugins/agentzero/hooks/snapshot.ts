@@ -87,6 +87,27 @@ function firstLine(text: string): string {
   return text.split('\n').map(l => l.trim()).find(l => l !== '') ?? ''
 }
 
+// Runs one of the plugin's tools/ scripts with the workspace's Python, as the snapshot runs.
+export async function runTool(
+  io: Pick<HudIo, 'run' | 'read' | 'pluginRoot'>,
+  workspace: string,
+  script: string,
+  args: string[],
+  timeoutMs: number,
+): Promise<RunResult | Error> {
+  const python = (await cachedPython(io, workspace)) ?? (await searchPython(io, workspace))
+  if (python === null) return new Error(NO_PYTHON)
+  try {
+    return await io.run([python, `${io.pluginRoot}/tools/${script}`, workspace, ...args], {
+      cwd: workspace,
+      env: { PYTHONPATH: `${workspace}/src` },
+      timeoutMs,
+    })
+  } catch (err) {
+    return err instanceof Error ? err : new Error(String(err))
+  }
+}
+
 const pythons = new Map<string, string>()
 
 const NO_PYTHON = 'no usable Python 3.11 with PyYAML'

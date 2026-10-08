@@ -9,6 +9,8 @@ export function paneNoteText(notes: readonly PaneNote[]): string | null {
   const lines = [FIRST]
   const forgot = of('forgot')
   if (forgot.length > 0) lines.push(`Forgotten, stop applying: ${forgot.map(n => `"${n.sentence}"`).join('; ')}`)
+  const restored = of('restored')
+  if (restored.length > 0) lines.push(`Restored, apply again: ${restored.map(n => `"${n.sentence}"`).join('; ')}`)
   const kept = of('kept')
   if (kept.length > 0) lines.push(`Kept, now active: ${kept.map(n => `${n.kind} "${n.sentence}"`).join('; ')}`)
   const rejected = of('rejected')

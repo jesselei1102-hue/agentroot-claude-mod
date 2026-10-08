@@ -166,3 +166,53 @@ test('every button in both panes is plain', async ($, on) => {
   expect(buttons.length).toBe(5)
   for (const b of buttons) expect([b.props.key, b.props.plain]).toEqual([b.props.key, true])
 })
+
+test('Restore brings a forgotten Fact back and offers Forget again', async ($, on) => {
+  const w = world(on)
+  w.snapshotJson = json([A, B])
+  w.responder = argv => (String(argv[1]).endsWith('/tools/restore.py')
+    ? { exitCode: 0, stdout: 'restored: fact:a — Never deploy on Fridays.\n' }
+    : { exitCode: 0, stdout: 'forgot: fact:a — Never deploy on Fridays.\n' })
+  await $.session.start(START)
+  const ui = await mount($)
+  await ui.press({ key: 'az-forget-fact:a' })
+  w.snapshotJson = json([B])
+  await ui.press({ key: 'az-forget-yes-fact:a' })
+  w.snapshotJson = json([A, B])
+  await ui.press({ key: 'az-restore-fact:a' })
+  const run = w.runs.at(-1)!
+  expect(String(run.argv[1]).endsWith('/tools/restore.py')).toBe(true)
+  expect(run.argv.slice(2)).toEqual(['/w', 'fact:a'])
+  expect(await ui.find({ key: 'az-forget-fact:a' })).toBeDefined()
+  expect(await ui.find({ key: 'az-restore-fact:a' })).toBeUndefined()
+  expect(await ui.find({ text: '2 active · 1 in hot set' })).toBeDefined()
+})
+
+test('a Restore that fails keeps the row forgotten and says why', async ($, on) => {
+  const w = world(on)
+  w.snapshotJson = json([A, B])
+  w.responder = argv => (String(argv[1]).endsWith('/tools/restore.py')
+    ? { exitCode: 1, stderr: 'a newer Fact replaced it: Deploy on Mondays.\n' }
+    : { exitCode: 0, stdout: 'forgot: fact:a — x\n' })
+  await $.session.start(START)
+  const ui = await mount($)
+  await ui.press({ key: 'az-forget-fact:a' })
+  await ui.press({ key: 'az-forget-yes-fact:a' })
+  await ui.press({ key: 'az-restore-fact:a' })
+  expect((await ui.find({ type: 'Text', text: 'a newer Fact replaced it: Deploy on Mondays.' }))?.props.color).toBe('error')
+  expect(await ui.find({ key: 'az-restore-fact:a' })).toBeDefined()
+})
+
+// The desktop kept showing a drawing whose buttons a later, identical redraw had retired: after
+// the first press every click was lost once (lab, 2026-10-08). Each drawing now differs.
+test('each drawing of a pane differs from the last', async ($, on) => {
+  const w = world(on)
+  w.snapshotJson = json([A, B])
+  await $.session.start(START)
+  const ui = await mount($)
+  const stamp = async () => (await ui.find({ key: 'az-drawing' }))?.text
+  const first = await stamp()
+  await ui.press({ key: 'az-forget-fact:a' })
+  expect(first).toBeDefined()
+  expect(await stamp()).not.toBe(first)
+})
