@@ -151,3 +151,18 @@ test('each Fact is one column, with its words and its date on their own lines', 
   expect(boxes.length > 0).toBe(true)
   for (const b of boxes) expect(b.props.flexDirection).toBe('column')
 })
+
+// A bordered button takes the keyboard when clicked; the redraw that follows removes it, the
+// keyboard falls back to the composer, and the next click into the pane is lost (desktop log,
+// 2026-10-08: rc.3's plain buttons took one click, 1.3.0-rc.1's bordered ones two). Plain ones do not.
+test('every button in both panes is plain', async ($, on) => {
+  const w = world(on)
+  w.snapshotJson = JSON.stringify({ ...SNAPSHOT, facts: [A, B] })
+  await $.session.start(START)
+  const memory = await mount($)
+  await memory.press({ key: 'az-forget-fact:a' })
+  const review = await $.ui.mount({ plugin: 'agentzero', surface: 'desktop', component: 'Pane', props: { ...PANE, title: 'AgentZero · Review' }, requestId: 'agentzero-review' })
+  const buttons = [...(await memory.findAll({ type: 'Button' })), ...(await review.findAll({ type: 'Button' }))]
+  expect(buttons.length).toBe(5)
+  for (const b of buttons) expect([b.props.key, b.props.plain]).toEqual([b.props.key, true])
+})

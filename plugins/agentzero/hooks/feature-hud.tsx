@@ -136,10 +136,11 @@ export function registerHud(on: On): void {
       }
       await data.gate.run(refreshJob(io, workspace))
     }
+    // Plain: a bordered button takes the keyboard, and the redraw after a press then loses the next click.
     const buttons = (item: PendingItem) => (
-      <Box flexDirection="row" gap={1}>
-        <Button key={`az-keep-${item.id}`} label="Keep" onPress={() => decide(item, 'keep')} />
-        <Button key={`az-reject-${item.id}`} label="Reject" onPress={() => decide(item, 'reject')} />
+      <Box flexDirection="row" gap={2}>
+        <Button key={`az-keep-${item.id}`} label="✓ Keep" plain={true} onPress={() => decide(item, 'keep')} />
+        <Button key={`az-reject-${item.id}`} label="✗ Reject" plain={true} dimColor={true} onPress={() => decide(item, 'reject')} />
       </Box>
     )
     return (
@@ -227,15 +228,15 @@ export function registerHud(on: On): void {
               {row.state === 'failed' && <Text color="error">{row.message ?? ''}</Text>}
               {row.citedBy.length > 0 && <Text color="warning">{cited(row.citedBy)}</Text>}
               {row.state === 'confirming' ? (
-                <Box flexDirection="row" gap={1} alignItems="center">
+                <Box flexDirection="row" gap={2} alignItems="center">
                   <Text color="error">Forget this Fact?</Text>
-                  <Button key={`az-forget-yes-${id}`} label="Forget" onPress={() => forget(row.fact)} />
-                  <Button key={`az-forget-no-${id}`} label="Cancel" onPress={() => cancel(row.fact)} />
+                  <Button key={`az-forget-yes-${id}`} label="✗ Forget" plain={true} onPress={() => forget(row.fact)} />
+                  <Button key={`az-forget-no-${id}`} label="Cancel" plain={true} dimColor={true} onPress={() => cancel(row.fact)} />
                 </Box>
               ) : (
                 row.actionable && (
                   <Box flexDirection="row">
-                    <Button key={`az-forget-${id}`} label="Forget" onPress={() => ask(row.fact)} />
+                    <Button key={`az-forget-${id}`} label="Forget" plain={true} dimColor={true} onPress={() => ask(row.fact)} />
                   </Box>
                 )
               )}

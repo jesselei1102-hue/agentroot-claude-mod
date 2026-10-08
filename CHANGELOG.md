@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.0-rc.3 — kernel 0.4.7 (333cd6e)
+
+- The panes' buttons are plain text buttons again (`✓ Keep`, `✗ Reject`, `Forget`, `✗ Forget`, `Cancel`). A bordered button takes the keyboard when clicked; the redraw after the press removes it, the keyboard falls back to the composer, and the next click into the pane went only to taking the keyboard back ("ui_press not handled" in the app's log). rc.3 of 1.2 had plain buttons and took one click.
+
 ## 1.3.0-rc.2 — kernel 0.4.7 (333cd6e)
 
 - Each item in the Review and Memory panes is one column: the sentence, the words (or provenance), then the date and tags, then the buttons. Laid out side by side, a long quote pushed the row wider than the pane and the `Forget` button out of sight (lab, 2026-10-08).

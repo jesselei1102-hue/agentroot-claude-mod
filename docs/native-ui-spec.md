@@ -113,3 +113,5 @@ Card tones map to theme keys: green → `success`, amber → `warning`, blue →
 ## Amendment (2026-10-08, lab)
 
 Rows are one column, not a row with the buttons on the right: in the desktop app a long line made the row wider than the pane and pushed `Forget` out of sight. A Fact's box reads, top to bottom: the sentence; its words (or `Inferred by the assistant, kept by you`); `Oct 6 · in hot set · task`; then its state lines and buttons. A Review item: the sentence; `<Kind> · <provenance> · <date>`; state; `Keep` `Reject`. The app's theme keys draw in colour on the desktop (`in hot set` in blue, seen).
+
+Buttons in the panes are `plain` (text buttons): a bordered button takes the keyboard on a click, and after the redraw that removes it the next click into the pane is lost (lab, 2026-10-08; see CHANGELOG 1.3.0-rc.3). The band keeps bordered buttons.
