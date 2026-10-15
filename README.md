@@ -132,11 +132,17 @@ To see the proposed Facts, run `./a0 memory review` in your project folder. You 
 
 A band above the prompt shows the state of the memory at all times. On screen, a Fact is called a **memory**.
 
-![The memory band above the prompt](docs/hud/band.png)
+![The memory band: AgentRoot, using 3 of 6 memories, 2 to review, context 34%, with the Review and Memory buttons](docs/hud/band.svg)
 
 - **The band** reads `AgentRoot · Using 3 of 6 memories · 2 to review`, then how much of the conversation space is used. "Using 3 of 6" means that the assistant has 3 of your 6 memories in this conversation (the hot set). "2 to review" shows only when something waits for your yes. When the hot set cannot be loaded, that part turns red and says why.
 - **The Memory pane.** The band has a button, `Memory`. The pane answers one question: what does the assistant remember in this conversation, and can you trust it? At the top: how many memories are in use (`3 of 6 memories in use`), when the hot set was loaded, how many are to review, the newest one, and the last 30 days with one dot per memory. Below, every memory on one line, in three sections: `In use now`, `Saved, not in use` and `Forgotten`. Under each sentence, the card says who wrote it: `Your words` when you said it, `Claude's wording` when the assistant wrote it and you kept it. Then its age, `this task` when it holds only for the current task, and `Updated` when it replaced an older one. Point at a row to see your words, the older sentence it replaced, and `Forget`. The plugin runs AgentRoot's own `forget` command; nothing is deleted, and `↺ Restore` brings it back until the pane closes. In the desktop app the pane is drawn in the app's light or dark colours, and `Forget` and `Restore` are outlined pills (red and blue). The terminal shows the figures as text (`IN USE ▰▰▰▱▱ 3/6   TO REVIEW 2`) and every row's details.
+
+  ![The Memory pane: 3 of 6 memories in use, then the sections In use now, Saved not in use and Forgotten, with Forget on a hovered row and Restore on a forgotten one](docs/hud/memory-pane.svg)
+
 - **The Review pane.** When something waits, the band shows a button, `Review`. The items are listed under `To review`. Each item has two buttons, `✓ Keep` and `Reject`: outlined pills (green and grey) in the desktop app, plain text in the terminal. The plugin runs AgentRoot's own `review` command for you, and the band count changes.
+
+  ![The Review pane: 2 to review, each with Keep and Reject, and 1 kept under Done](docs/hud/review-pane.svg)
+
 - **The assistant is told.** When you keep, reject or forget something in a pane, the plugin tells the assistant with your next message. It does not keep using a Fact you removed.
 - **The cards.** When the assistant writes to the memory, the command shows as a card: green when a Fact is saved with your words, amber when it waits for your yes, blue when the assistant uses a skill.
 
@@ -163,6 +169,7 @@ plugins/agentzero/
   kernel/                         a pinned copy of AgentRoot (Python)
                                   SOURCE.json: its commit and the hash of each file
 scripts/sync_kernel.py            copies one AgentRoot commit into kernel/
+scripts/render_hud.ts             draws the HUD figures in docs/hud/ with the plugin's own drawing code (bun scripts/render_hud.ts)
 tests/                            Python tests: the copy script, and kernel/ against SOURCE.json
 docs/                             the designs (spec.md, hud-spec.md), what was tested (verify.md), and how to write tests (test-kit.md)
 ```

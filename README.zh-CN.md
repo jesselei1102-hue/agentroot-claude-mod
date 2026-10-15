@@ -132,11 +132,17 @@ AgentRoot 自己也可能把 Fact 保存为 proposed。当 Fact 说的比你的�
 
 输入框上方有一条提示条，一直显示记忆的状态。界面上把 Fact 叫作 **memory**（记忆）。
 
-![输入框上方的记忆提示条](docs/hud/band.png)
+![记忆提示条：AgentRoot，6 条记忆用着 3 条，2 条待确认，上下文 34%，右边是 Review 和 Memory 按钮](docs/hud/band.svg)
 
 - **提示条**显示 `AgentRoot · Using 3 of 6 memories · 2 to review`，后面是对话空间用了多少。“Using 3 of 6”表示你的 6 条记忆里，助手在这次对话中用着 3 条（即 hot set）。“2 to review”（2 条待确认）只在有东西等你确认时出现。hot set 加载失败时，那一格变红，并写明原因。
 - **记忆面板。** 提示条上有 `Memory` 按钮。这个面板回答一个问题：助手在这次对话里记得什么，能不能信？顶部显示：几条记忆在用（`3 of 6 memories in use`）、hot set 什么时候加载的、几条待确认、最新的一条，以及最近 30 天（一条记忆一个点）。下面每条记忆一行，分成三组：`In use now`（正在用）、`Saved, not in use`（已保存，没在用）和 `Forgotten`（已忘掉）。每句话下面，卡片写明是谁的措辞：`Your words`（你的原话）表示你说过；`Claude's wording`（Claude 的措辞）表示助手写的、你保留了。然后是多久以前、只对当前任务有效时的 `this task`，以及替换了旧的一条时的 `Updated`。鼠标指向一行，显示你的原话、被替换的旧句子和 `Forget`。插件替你运行 AgentRoot 自己的 `forget` 命令；不会真的删除，面板关掉之前按 `↺ Restore` 可以恢复。桌面 app 里面板按 app 的浅色或深色主题绘制，`Forget` 和 `Restore` 是带边框的圆角按钮（红色和蓝色）。终端里数字显示成文字（`IN USE ▰▰▰▱▱ 3/6   TO REVIEW 2`），每行的详情直接显示。
+
+  ![记忆面板：6 条记忆有 3 条在用，下面分成 In use now、Saved, not in use 和 Forgotten 三组，指向的一行有 Forget，忘掉的一行有 Restore](docs/hud/memory-pane.svg)
+
 - **待确认面板。** 有东西等你确认时，提示条上会出现 `Review` 按钮。待确认的条目列在 `To review` 下。每一条都有两个按钮：`✓ Keep`（保留）和 `Reject`（拒绝）；桌面 app 里是带边框的圆角按钮（绿色和灰色），终端里是普通文字。插件替你运行 AgentRoot 自己的 `review` 命令，提示条的数字随之变化。
+
+  ![待确认面板：2 条待确认，每条有 Keep 和 Reject，Done 下有 1 条已保留](docs/hud/review-pane.svg)
+
 - **助手会知道。** 你在面板里保留、拒绝或忘掉一条，插件会在你下一条消息里告诉助手。你删掉的 Fact，它不会继续用。
 - 提示条、面板和卡片上的文字都是英文。
 - **卡片。** 助手写入记忆时，这条命令会显示成一张卡片：用你的原话记下的 Fact 是绿色，等你确认的是黄色，助手使用技能时是蓝色。
@@ -164,6 +170,7 @@ plugins/agentzero/
   kernel/                         固定版本的 AgentRoot 副本（Python）
                                   SOURCE.json：它的提交号和每个文件的哈希
 scripts/sync_kernel.py            把 AgentRoot 的某一个提交复制到 kernel/
+scripts/render_hud.ts             用插件自己的绘图代码画出 docs/hud/ 里的 HUD 图（bun scripts/render_hud.ts）
 tests/                            Python 测试：复制脚本，以及 kernel/ 对照 SOURCE.json
 docs/                             设计（spec.md、hud-spec.md）、测试了什么（verify.md）、怎么写测试（test-kit.md）
 ```
