@@ -1,7 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 import type { Fact } from '../types'
 import type { MemoryRow } from './memory'
-import { age, columnsInline, factDetail, hotSetNote, sourceChip, themeOf } from './view'
+import { age, factDetail, hotSetNote, metaLine, themeOf } from './view'
 
 const fact = (over: Partial<Fact> = {}): Fact => ({
   id: 'fact:a', sentence: 'Use pnpm.', said: '用 pnpm', author: 'human', createdAt: '2026-10-06T23:30:00.000-07:00', scope: 'project', inHotSet: true, factKey: null, replaces: null, ...over,
@@ -25,9 +25,11 @@ test('age', () => {
   expect(age(NOW, 'soon')).toBe('—')
 })
 
-test('sourceChip', () => {
-  expect(sourceChip(fact({ said: '周五别部署' }))).toEqual({ text: '❝ yours', dim: false })
-  expect(sourceChip(fact({ said: null }))).toEqual({ text: '◇ inferred', dim: true })
+test('metaLine: source, age, and scope only when not the project', () => {
+  expect(metaLine(fact({ said: '周五别部署', createdAt: '2026-10-13T12:00:00Z' }), NOW)).toBe('Your words · 2d')
+  expect(metaLine(fact({ said: null, createdAt: '2026-10-07T12:00:00Z' }), NOW)).toBe('Inferred · 8d')
+  expect(metaLine(fact({ createdAt: '2026-10-01T12:00:00Z', scope: 'task' }), NOW)).toBe('Your words · 2w · this task')
+  expect(metaLine(fact({ createdAt: null }), NOW)).toBe('Your words')
 })
 
 test('factDetail shows the whole words and what it replaced', () => {
@@ -36,10 +38,6 @@ test('factDetail shows the whole words and what it replaced', () => {
   expect(factDetail(row(fact({ said: null })))).toEqual(['Inferred by the assistant, kept by you'])
 })
 
-test('columns sit beside the sentence from 70 columns', () => {
-  expect(columnsInline(70)).toBe(true)
-  expect(columnsInline(69)).toBe(false)
-})
 
 // Review: an HH:MM alone passed off yesterday's hot set as this conversation's; a failed load said nothing.
 test('hotSetNote: today, an earlier day, failed, none', () => {

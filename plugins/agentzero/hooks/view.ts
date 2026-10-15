@@ -38,8 +38,14 @@ export function age(now: number, iso: string | null): string {
   return `${Math.floor(ago / (7 * DAY))}w`
 }
 
-export function sourceChip(fact: Fact): { text: '❝ yours' | '◇ inferred'; dim: boolean } {
-  return fact.said !== null ? { text: '❝ yours', dim: false } : { text: '◇ inferred', dim: true }
+// The one light line under a Fact: who said it, how old it is, and the scope when it is not the
+// project (the usual case, so naming it on every row was noise).
+export function metaLine(fact: Fact, now: number): string {
+  const parts = [fact.said !== null ? 'Your words' : 'Inferred']
+  const old = age(now, fact.createdAt)
+  if (old !== '—') parts.push(old)
+  if (fact.scope !== 'project') parts.push(fact.scope === 'task' ? 'this task' : fact.scope)
+  return parts.join(' · ')
 }
 
 // What a row shows on hover: the words whole, then the older sentence it replaced.
@@ -48,11 +54,6 @@ export function factDetail(row: MemoryRow): string[] {
   const lines = [f.said !== null ? `“${f.said}”` : 'Inferred by the assistant, kept by you']
   if (f.replaces !== null) lines.push(`Replaced “${f.replaces}”`)
   return lines
-}
-
-// From 70 columns a row's source, age and scope sit beside its sentence; narrower, under it.
-export function columnsInline(columns: number): boolean {
-  return columns >= 70
 }
 
 // The hot set's load, for the pane: "at 14:02" today, "1d ago" before today, the reason when it failed.

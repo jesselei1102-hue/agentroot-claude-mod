@@ -143,3 +143,12 @@ The `Fact` type in `types/index.d.ts` gains `factKey: string | null` and `replac
 - The cluster reads as decoration: the operator still opens the list to answer "what is loaded".
 - The 5.7 px per column estimate drifts with the app's font size, and the drawing overflows or leaves a gap.
 - Hover hides `Forget` so well that the operator does not find it.
+
+## Amendment (2026-10-15, after the operator's screenshot: "好丑啊")
+
+The first build drew the cluster as one SVG with its own text. In the side pane it read as a second product above the list: small tracked capitals against the app's 15 px text, a centred 2 × 2 grid against a left-aligned list, every row two heavy lines with `❝ yours  2d  project`, and bold capital section titles. Changed, from a mock the operator approved ("This direction is right; port it into the mod"):
+
+- **No text inside SVG.** The figures are the app's own Text: `Loaded` over **3** `of 6`, `Your words` over **5** `of 6`, `Waiting` over **2** (amber). SVG draws only a 32 px ring or light beside each, and the 30-day strip at the pane's width with `30 days ago` and `today` under its ends. The figures wrap as a row; there is no grid.
+- **One light line per Fact:** `Your words · 2d`, `Inferred · 8d`; the scope only when it is not the project (`this task`); `· updated` in blue for a Fact that replaced an older one (was `↺`).
+- **Lighter marks and titles:** `•` blue loaded, `◦` grey not loaded, `×` forgotten; section titles in sentence case, grey, not bold (`Loaded now · 3`, `at 14:02` at the right).
+- The Review pane takes the same figures (`Waiting`, `Done`) and rows.

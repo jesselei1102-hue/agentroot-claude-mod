@@ -14,8 +14,8 @@ async function mount($: any, surface: 'desktop' | 'terminal' = 'desktop') {
   return $.ui.mount({ plugin: 'agentzero', surface, component: 'Pane', props: PANE, requestId: 'agentzero-memory' })
 }
 
-async function cluster(ui: any): Promise<string> {
-  return String((await ui.find({ type: 'Svg' }))?.props.source ?? '')
+async function svgs(ui: any): Promise<any[]> {
+  return ui.findAll({ type: 'Svg' })
 }
 
 // The kit hands back no `hover` (a surface-side style), so a hover row is its display: 'none' Box.
@@ -48,25 +48,30 @@ for (const surface of ['desktop', 'terminal'] as const) {
     await $.session.start(START)
     const ui = await mount($, surface)
     const t = await allText(ui)
-    expect(t).toContain('LOADED NOW · 1')
-    expect(t).toContain('NOT LOADED · 1')
-    expect(t).toContain('●Never deploy on Fridays.❝ yours')
-    expect(t).toContain('○Deploys go out on Tuesdays.◇ inferred')
-    expect((await ui.find({ type: 'Text', text: '●' }))?.props.color).toBe('suggestion')
+    expect(t).toContain('Loaded now · 1')
+    expect(t).toContain('Not loaded · 1')
+    expect(t).toContain('•Never deploy on Fridays.Your words')
+    expect(t).toContain('◦Deploys go out on Tuesdays.Inferred')
+    expect((await ui.find({ type: 'Text', text: '•' }))?.props.color).toBe('suggestion')
     expect(await ui.find({ key: 'az-forget-fact:a' })).toBeDefined()
     expect(await ui.find({ key: 'az-forget-fact:b' })).toBeDefined()
   })
 }
 
-test('desktop: a cluster SVG, details on hover', async ($, on) => {
+test('desktop: figures in the app\'s text beside small SVG gauges, details on hover', async ($, on) => {
   const w = world(on)
   w.snapshotJson = json([A, B])
   await $.session.start(START)
   const ui = await mount($)
-  const svg = await cluster(ui)
-  expect(svg).toContain('LOADED')
-  expect(svg).toContain('1 / 2')
-  expect(svg).toContain('width="798"')
+  const t = await allText(ui)
+  expect(t).toContain('Loaded1 of 2')
+  expect(t).toContain('Your words1 of 2')
+  expect(t).toContain('Waiting1')
+  expect(t).toContain('30 days agotoday')
+  const drawn = await svgs(ui)
+  expect(drawn.length).toBe(4)
+  for (const s of drawn) expect(String(s.props.source)).not.toContain('<text')
+  expect(drawn.some((s: any) => String(s.props.source).includes('width="798"'))).toBe(true)
   expect((await hoverBoxes(ui)).length).toBe(2)
 })
 
@@ -85,7 +90,7 @@ test('Loaded counts Facts in the hot set, not the hot set ids', async ($, on) =>
   const w = world(on)
   w.snapshotJson = JSON.stringify({ ...SNAPSHOT, hotSet: { at: SNAPSHOT.hotSet.at, factIds: ['fact:gone', 'fact:a'] }, facts: [A, B] })
   await $.session.start(START)
-  expect(await cluster(await mount($))).toContain('1 / 2')
+  expect(await allText(await mount($))).toContain('Loaded1 of 2')
 })
 
 test('a Fact that replaced an older one shows ↺ and the older words on hover', async ($, on) => {
@@ -93,7 +98,7 @@ test('a Fact that replaced an older one shows ↺ and the older words on hover',
   w.snapshotJson = json([{ ...A, factKey: 'deploys', replaces: 'Deploy any day.' }, B])
   await $.session.start(START)
   const t = await allText(await mount($))
-  expect(t).toContain('↺')
+  expect(t).toContain('updated')
   expect(t).toContain('Replaced “Deploy any day.”')
 })
 
@@ -120,8 +125,8 @@ test('forget runs the kernel and keeps the row', async ($, on) => {
   w.snapshotJson = json([B])
   await ui.press({ key: 'az-forget-fact:a' })
   expect(w.runs.at(-1)).toEqual({ argv: ['/w/a0', 'memory', 'forget', 'fact:a'], init: { cwd: '/w', timeoutMs: 10000 } })
-  expect(await cluster(ui)).toContain('0 / 1')
-  expect(await allText(ui)).toContain('FORGOTTEN · 1')
+  expect(await allText(ui)).toContain('Loaded0 of 1')
+  expect(await allText(ui)).toContain('Forgotten · 1')
   expect((await hoverBoxes(ui)).length).toBe(1)
   expect(await ui.find({ key: 'az-restore-fact:a' })).toBeDefined()
   expect((await ui.find({ type: 'Text', text: 'Never deploy on Fridays.' }))?.props.strikethrough).toBe(true)
@@ -136,7 +141,7 @@ test('a forgotten row survives a failed refresh', async ($, on) => {
   const ui = await mount($)
   w.snapshotJson = 'not json'
   await ui.press({ key: 'az-forget-fact:a' })
-  expect(await allText(ui)).toContain('FORGOTTEN · 1')
+  expect(await allText(ui)).toContain('Forgotten · 1')
 })
 
 test('a failed forget shows the reason and offers Forget again', async ($, on) => {
@@ -221,7 +226,7 @@ test('Restore brings a forgotten Fact back and offers Forget again', async ($, o
   expect(run.argv.slice(2)).toEqual(['/w', 'fact:a'])
   expect(await ui.find({ key: 'az-forget-fact:a' })).toBeDefined()
   expect(await ui.find({ key: 'az-restore-fact:a' })).toBeUndefined()
-  expect(await cluster(ui)).toContain('1 / 2')
+  expect(await allText(ui)).toContain('Loaded1 of 2')
 })
 
 test('a Restore that fails keeps the row forgotten and says why', async ($, on) => {
@@ -247,5 +252,4 @@ test('a failed hot set shows in the pane, as in the band', async ($, on) => {
   await $.prompt.submit(PROMPT('one'))
   const ui = await mount($)
   expect((await ui.find({ type: 'Text', text: 'not loaded (exit 1)' }))?.props.color).toBe('error')
-  expect(await cluster(ui)).toContain('not loaded (exit 1)')
 })
