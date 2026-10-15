@@ -31,6 +31,10 @@ function pendingItem(v: unknown): PendingItem | null {
   const o = v as Record<string, unknown>
   if (![o.id, o.kind, o.sentence, o.provenance].every(isStr)) return null
   if (o.createdAt !== null && !isStr(o.createdAt)) return null
+  // absent in snapshots from before 1.4: read as null
+  const factKey = o.factKey ?? null
+  const replaces = o.replaces ?? null
+  if ((factKey !== null && !isStr(factKey)) || (replaces !== null && !isStr(replaces))) return null
   return { id: o.id as string, kind: o.kind as string, sentence: o.sentence as string, provenance: o.provenance as string, createdAt: o.createdAt as string | null }
 }
 
@@ -40,6 +44,10 @@ function fact(v: unknown): Fact | null {
   if (![o.id, o.sentence, o.author, o.scope].every(isStr) || typeof o.inHotSet !== 'boolean') return null
   if (o.said !== null && !isStr(o.said)) return null
   if (o.createdAt !== null && !isStr(o.createdAt)) return null
+  // absent in snapshots from before 1.4: read as null
+  const factKey = o.factKey ?? null
+  const replaces = o.replaces ?? null
+  if ((factKey !== null && !isStr(factKey)) || (replaces !== null && !isStr(replaces))) return null
   return {
     id: o.id as string,
     sentence: o.sentence as string,
@@ -48,6 +56,8 @@ function fact(v: unknown): Fact | null {
     createdAt: o.createdAt as string | null,
     scope: o.scope as string,
     inHotSet: o.inHotSet,
+    factKey: factKey as string | null,
+    replaces: replaces as string | null,
   }
 }
 

@@ -3,7 +3,7 @@ import type { Fact, MemoryResult, MemoryResults } from '../types'
 import { MEMORY_ROW_CAP, cancelForget, forgetArgv, forgetResult, memoryRows, mergeMemory, restoreResult } from './memory'
 
 const fact = (id: string, createdAt: string | null, inHotSet = false): Fact => ({
-  id: `fact:${id}`, sentence: id, said: null, author: 'human', createdAt, scope: 'project', inHotSet,
+  id: `fact:${id}`, sentence: id, said: null, author: 'human', createdAt, scope: 'project', inHotSet, factKey: null, replaces: null,
 })
 const a = fact('a', '2026-10-06T10:00:00+08:00', true)
 const b = fact('b', '2026-10-05T10:00:00+08:00', true)

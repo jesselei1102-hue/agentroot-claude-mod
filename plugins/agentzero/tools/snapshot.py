@@ -42,6 +42,20 @@ def _when(created_at: str) -> float:
         return float("-inf")
 
 
+def _replaced(entries: list, fact) -> "str | None":
+    """The sentence of the newest retired Fact the given one replaced: same explicit key, earlier."""
+    if not fact.fact_key:
+        return None
+    older = [
+        e
+        for e in entries
+        if e.status == "retired"
+        and e.fact_key == fact.fact_key
+        and _when(e.created_at) < _when(fact.created_at)
+    ]
+    return max(older, key=lambda e: _when(e.created_at)).rule if older else None
+
+
 def _facts(memory_dir: Path, hot_ids: set) -> list:
     """The active Facts, newest first, as the Memory pane shows them."""
     from memory.lifecycle import parse_entry
@@ -63,6 +77,8 @@ def _facts(memory_dir: Path, hot_ids: set) -> list:
             "createdAt": str(e.created_at) if _DATE.match(str(e.created_at)) else None,
             "scope": e.scope,
             "inHotSet": e.id in hot_ids,
+            "factKey": e.fact_key or None,
+            "replaces": _replaced(entries, e),
         }
         for e in active
     ]

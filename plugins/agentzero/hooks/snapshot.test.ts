@@ -159,7 +159,7 @@ const withFacts = (facts: unknown) => JSON.stringify({ ...JSON.parse(OK_JSON), f
 
 test('parseSnapshot facts: read', () => {
   const r = parseSnapshot(withFacts([FACT]))
-  expect(r.ok && r.snapshot.facts).toEqual([FACT])
+  expect(r.ok && r.snapshot.facts).toEqual([{ ...FACT, factKey: null, replaces: null }])
 })
 
 test('parseSnapshot facts: missing → null, rest intact', () => {
@@ -175,4 +175,11 @@ test('parseSnapshot facts: malformed → null', () => {
   expect(r.ok && r.snapshot.facts).toBeNull()
   const notList = parseSnapshot(withFacts('x'))
   expect(notList.ok && notList.snapshot.facts).toBeNull()
+})
+
+test('parseSnapshot facts: the key and the sentence replaced', () => {
+  const r = parseSnapshot(withFacts([{ ...FACT, factKey: 'k', replaces: 'old' }]))
+  expect(r.ok && r.snapshot.facts?.[0]).toEqual({ ...FACT, factKey: 'k', replaces: 'old' })
+  const bad = parseSnapshot(withFacts([{ ...FACT, factKey: 3 }]))
+  expect(bad.ok && bad.snapshot.facts).toBeNull()
 })

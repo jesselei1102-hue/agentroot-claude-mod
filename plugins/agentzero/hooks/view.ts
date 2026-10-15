@@ -1,4 +1,4 @@
-import type { PendingItem } from '../types'
+import type { Fact, PendingItem } from '../types'
 import type { PillTone } from './band'
 import type { MemoryRow } from './memory'
 
@@ -64,4 +64,30 @@ export function factMeta(row: MemoryRow): { words: string; tags: Segment[] } {
 export function reviewMeta(item: PendingItem): string {
   const date = shortDate(item.createdAt)
   return date !== null ? `${item.provenance} · ${date}` : item.provenance
+}
+
+const HOUR = 3_600_000
+const DAY = 24 * HOUR
+
+// How old a Fact is, in one short word: now, 5h, 3d, 5w; a dash when the date is unknown.
+export function age(now: number, iso: string | null): string {
+  const at = iso !== null ? Date.parse(iso) : NaN
+  if (Number.isNaN(at)) return '—'
+  const ago = now - at
+  if (ago < HOUR) return 'now'
+  if (ago < DAY) return `${Math.floor(ago / HOUR)}h`
+  if (ago < 14 * DAY) return `${Math.floor(ago / DAY)}d`
+  return `${Math.floor(ago / (7 * DAY))}w`
+}
+
+export function sourceChip(fact: Fact): { text: '❝ yours' | '◇ inferred'; dim: boolean } {
+  return fact.said !== null ? { text: '❝ yours', dim: false } : { text: '◇ inferred', dim: true }
+}
+
+// What a row shows on hover: the words whole, then the older sentence it replaced.
+export function factDetail(row: MemoryRow): string[] {
+  const f = row.fact
+  const lines = [f.said !== null ? `“${f.said}”` : 'Inferred by the assistant, kept by you']
+  if (f.replaces !== null) lines.push(`Replaced “${f.replaces}”`)
+  return lines
 }

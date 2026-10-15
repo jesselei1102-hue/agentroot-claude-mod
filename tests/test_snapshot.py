@@ -130,3 +130,18 @@ def test_proposed_and_retired_are_not_listed(ws):
 def test_facts_keep_chinese(ws):
     mem(ws, "remember", "周五不部署", "--said", "周五不部署")
     assert "周五不部署" in run_snapshot(ws).stdout.decode("utf-8")
+
+
+def test_a_fact_names_its_key_and_what_it_replaced(ws):
+    mem(ws, "remember", "Stand-up at 9.", "--said", "Stand-up at 9.", "--fact-key", "standup")
+    mem(ws, "remember", "Stand-up at 10.", "--said", "Stand-up at 10.", "--fact-key", "standup")
+    _, snap = snapshot(ws)
+    [f] = snap["facts"]
+    assert f["factKey"] == "standup" and f["replaces"] == "Stand-up at 9."
+
+
+def test_a_fact_without_a_key_replaces_nothing(ws):
+    mem(ws, "remember", "Use pnpm.", "--said", "Use pnpm.")
+    _, snap = snapshot(ws)
+    [f] = snap["facts"]
+    assert f["factKey"] is None and f["replaces"] is None
