@@ -152,3 +152,14 @@ The first build drew the cluster as one SVG with its own text. In the side pane 
 - **One light line per Fact:** `Your words · 2d`, `Inferred · 8d`; the scope only when it is not the project (`this task`); `· updated` in blue for a Fact that replaced an older one (was `↺`).
 - **Lighter marks and titles:** `•` blue loaded, `◦` grey not loaded, `×` forgotten; section titles in sentence case, grey, not bold (`Loaded now · 3`, `at 14:02` at the right).
 - The Review pane takes the same figures (`Waiting`, `Done`) and rows.
+
+## Amendment 2 (2026-10-15: "讲真，我真的不满意"; "This mock is the level I want")
+
+Amendment 1's all-native pane still read as a plain text list: inside a pane the app's components give a plugin one type size, theme colours and no fills. The mods the operator pointed to draw their panes whole: Savvy Progress draws its header and every agent row as its own SVG (13 px titles, 11 px meta, its own light and dark palette) and keeps native elements for section toggles; Claude Skins draws its diffs, tables and charts the same way. So on desktop:
+
+- **The Memory pane is drawn:** a header SVG (`MEMORY IN THIS CONVERSATION`, the loaded count at 40 px with `of N loaded`, `Hot set loaded today at 14:02` or the failure in red, a gauge of up to 12 cells; tiles `YOUR WORDS` with a bar, `WAITING` with an amber light, `NEWEST`; the 30-day timeline with week ticks), a small SVG per group title with a count chip, and one SVG card per Fact (a rail, blue when loaded; the sentence at 14 px; `Your words · 2d` or an `Inferred` pill, `this task`, an `Updated` pill).
+- **Hover:** a second, tinted card with the operator's words (and `replaced “…”`) is laid over the row (`position: absolute`, `display: none`, revealed on hover), with the native `Forget` button at its right. A forgotten card shows `Restore`, a failed one `Forget`, without hover.
+- **The Review pane** likewise: a header (`WAITING FOR YOUR YES`, the count at 40 px, `N decided in this pane`), cards with an amber, green or red rail, and native `✓ Keep` `✗ Reject` laid over each open card.
+- **The band** is one SVG (the brand mark, `3/6 loaded`, `5/6 yours`, `2 waiting`, the context bar) beside the native `Review` and `Memory` buttons, when the fact list is known; otherwise text as before.
+- Every SVG is laid out at about 7 px a column (240–1100 px) and drawn at `width="100%"`, so it scales to the pane without stretching. Text is cut by an estimate of the system font's widths.
+- The terminal and the phone keep the text panes of Amendment 1.

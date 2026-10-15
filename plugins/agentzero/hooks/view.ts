@@ -62,5 +62,5 @@ export function hotSetNote(now: number, iso: string | null, error: string | null
   const at = iso !== null ? new Date(iso) : null
   if (at === null || Number.isNaN(at.getTime())) return null
   if (at.toDateString() !== new Date(now).toDateString()) return { text: `${age(now, iso)} ago`, failed: false }
-  return { text: `at ${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`, failed: false }
+  return { text: `today at ${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`, failed: false }
 }

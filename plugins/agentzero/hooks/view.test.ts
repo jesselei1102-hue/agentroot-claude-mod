@@ -43,7 +43,7 @@ test('factDetail shows the whole words and what it replaced', () => {
 test('hotSetNote: today, an earlier day, failed, none', () => {
   const local = (h: number, m: number, dayOffset = 0) => { const d = new Date(NOW); d.setHours(h, m, 0, 0); d.setDate(d.getDate() + dayOffset); return d }
   const now = local(15, 0).getTime()
-  expect(hotSetNote(now, local(14, 2).toISOString(), null)).toEqual({ text: 'at 14:02', failed: false })
+  expect(hotSetNote(now, local(14, 2).toISOString(), null)).toEqual({ text: 'today at 14:02', failed: false })
   expect(hotSetNote(now, local(14, 2, -1).toISOString(), null)).toEqual({ text: '1d ago', failed: false })
   expect(hotSetNote(now, local(14, 2).toISOString(), 'exit 1')).toEqual({ text: 'not loaded (exit 1)', failed: true })
   expect(hotSetNote(now, null, null)).toBeNull()

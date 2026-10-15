@@ -1,10 +1,13 @@
 import type { Fact, HudState } from '../types'
 import type { Tone } from './cards'
+import type { BandData } from './instruments'
 
 export type PillTone = Tone | 'ink' | 'red'
 export type Pill = { text: string; tone: PillTone }
 export type Ring = { percent: number; tone: 'blue' | 'amber'; note: string | null }
-export type BandModel = { pills: Pill[]; ring: Ring | null; showReview: boolean; showMemory: boolean; alt: string }
+
+// drawn: what the desktop draws, known only with a fact list; without one the band is text.
+export type BandModel = { pills: Pill[]; ring: Ring | null; showReview: boolean; showMemory: boolean; alt: string; drawn: BandData | null }
 
 export const CONTEXT_WARN_PERCENT = 80
 
@@ -47,5 +50,15 @@ export function bandModel(hud: HudState, hotSetError: string | null, contextPerc
     showReview: snap !== null && snap.pending.length > 0,
     showMemory: snap !== null,
     alt: altText(snap, facts),
+    drawn: snap !== null && facts !== null
+      ? {
+          loaded: facts.filter(f => f.inHotSet).length,
+          active: facts.length,
+          yours: facts.filter(f => f.said !== null).length,
+          waiting: snap.pending.length,
+          context: ring?.percent ?? null,
+          failed: hotSetError,
+        }
+      : null,
   }
 }

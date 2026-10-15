@@ -71,7 +71,8 @@ export function registerHud(on: On): void {
       await data.gate.run(refreshJob(io, workspace))
     }
     const els = $.ui.resolve(e) as unknown as Els
-    return band(els, m, { review: () => openPane(REVIEW_PANE, REVIEW_TITLE), memory: () => openPane(MEMORY_PANE, MEMORY_TITLE) })
+    const ctx: ViewCtx = { surface: e.surface, columns: e.props.bodyColumns, now: await $.clock.now() }
+    return band(els, m, { review: () => openPane(REVIEW_PANE, REVIEW_TITLE), memory: () => openPane(MEMORY_PANE, MEMORY_TITLE) }, ctx)
   })
 
   on('ui.render', { component: 'Pane', requestId: REVIEW_PANE }, async ($, e) => {

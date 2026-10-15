@@ -47,3 +47,10 @@ test('showMemory with a snapshot, even with no Facts', () => {
 test('no showMemory without a snapshot', () => {
   expect(bandModel({ snapshot: null, error: 'timed out', stale: false }, null, 41, NOW).showMemory).toBe(false)
 })
+
+// What the desktop draws: the figures, known only with a fact list.
+test('band drawing data', () => {
+  expect(bandModel(withFacts(hud(3, 2)), null, 41, NOW).drawn).toEqual({ loaded: 1, active: 3, yours: 2, waiting: 2, context: 41, failed: null })
+  expect(bandModel(withFacts(hud(3, 2)), 'exit 1', undefined, NOW).drawn).toEqual({ loaded: 1, active: 3, yours: 2, waiting: 2, context: null, failed: 'exit 1' })
+  expect(bandModel(hud(3, 2), null, 41, NOW).drawn).toBeNull()
+})

@@ -23,16 +23,25 @@ for (const surface of ['desktop', 'terminal'] as const) {
   })
 }
 
-for (const surface of ['desktop', 'terminal'] as const) {
-  test(`the band shows loaded and yours from the Facts on ${surface}`, async ($, on) => {
-    const w = world(on)
-    w.snapshotJson = JSON.stringify({ ...SNAPSHOT, facts: FACTS })
-    await $.session.start(START)
-    const ui = await $.ui.mount({ plugin: 'agentzero', surface, component: 'AbovePrompt', props: BAND })
-    expect(await bandText(ui)).toBe('◆AgentZero● 1/3 loaded❝ 2/3 yours◉ 1 waiting▰▰▰▱▱▱▱▱context 41%')
-    expect((await ui.find({ type: 'Text', text: '● 1/3 loaded' }))?.props.color).toBe('suggestion')
-  })
-}
+test('the band shows loaded and yours from the Facts on terminal', async ($, on) => {
+  const w = world(on)
+  w.snapshotJson = JSON.stringify({ ...SNAPSHOT, facts: FACTS })
+  await $.session.start(START)
+  const ui = await $.ui.mount({ plugin: 'agentzero', surface: 'terminal', component: 'AbovePrompt', props: BAND })
+  expect(await bandText(ui)).toBe('◆AgentZero● 1/3 loaded❝ 2/3 yours◉ 1 waiting▰▰▰▱▱▱▱▱context 41%')
+  expect((await ui.find({ type: 'Text', text: '● 1/3 loaded' }))?.props.color).toBe('suggestion')
+})
+
+test('desktop: the band is drawn, with Review and Memory beside it', async ($, on) => {
+  const w = world(on)
+  w.snapshotJson = JSON.stringify({ ...SNAPSHOT, facts: FACTS })
+  await $.session.start(START)
+  const ui = await $.ui.mount({ plugin: 'agentzero', surface: 'desktop', component: 'AbovePrompt', props: BAND })
+  const svg = String((await ui.find({ type: 'Svg' }))?.props.source)
+  for (const s of ['AgentZero', '1/3 loaded', '2/3 yours', '1 waiting', 'context 41%']) expect(svg).toContain(s)
+  expect(await ui.find({ key: 'az-review' })).toBeDefined()
+  expect(await ui.find({ key: 'az-memory' })).toBeDefined()
+})
 
 test('the review button opens the pane and refreshes', async ($, on) => {
   const w = world(on)
@@ -96,16 +105,16 @@ test('/agentzero review outside a workspace opens nothing', async ($, on) => {
   expect(w.opened).toEqual([])
 })
 
-async function mountPane($: any) {
-  return $.ui.mount({ plugin: 'agentzero', surface: 'desktop', component: 'Pane', props: PANE, requestId: 'agentzero-review' })
+// Behaviour is the same on every surface; the terminal's tree is text, so the flows are read there.
+async function mountPane($: any, surface: 'desktop' | 'terminal' = 'terminal') {
+  return $.ui.mount({ plugin: 'agentzero', surface, component: 'Pane', props: PANE, requestId: 'agentzero-review' })
 }
 
 test('the pane lists what waits, with keep and reject', async ($, on) => {
   world(on)
   await $.session.start(START)
   const ui = await mountPane($)
-  expect((await ui.findAll({ type: 'Svg' })).length).toBe(2)
-  expect(await bandText(ui)).toContain('Waiting1Done0')
+  expect(await bandText(ui)).toContain('WAITING 1   DONE 0')
   expect(await bandText(ui)).toContain('Waiting for you · 1')
   expect((await ui.findAll({ type: 'Box' })).some((b: any) => b.props.display === 'none')).toBe(false)
   expect(await ui.find({ text: '周五不部署' })).toBeDefined()
@@ -158,13 +167,14 @@ test('with no snapshot the pane says why, not all clear', async ($, on) => {
   expect(await ui.find({ text: 'Nothing is waiting for you ✓' })).toBeUndefined()
 })
 
-// A long line must never push the buttons out of the pane (lab, 2026-10-08): the line beside them shrinks.
-test('the line beside the Review buttons shrinks', async ($, on) => {
+test('desktop: the Review pane is drawn whole, with Keep and Reject laid over each open card', async ($, on) => {
   world(on)
   await $.session.start(START)
-  const ui = await mountPane($)
-  const shrinking = (await ui.findAll({ type: 'Box' })).filter((b: any) => b.props.flexShrink === 1 && b.props.minWidth === 0)
-  expect(shrinking.length > 0).toBe(true)
+  const ui = await mountPane($, 'desktop')
+  const d = (await ui.findAll({ type: 'Svg' })).map((x: any) => String(x.props.source)).join('\n')
+  for (const s of ['WAITING FOR YOUR YES', 'WAITING FOR YOU', '周五不部署', 'Fact · agent proposed it']) expect(d).toContain(s)
+  expect(await ui.find({ key: 'az-keep-fact:a' })).toBeDefined()
+  expect(await ui.find({ key: 'az-reject-fact:a' })).toBeDefined()
 })
 
 test('the Review pane on terminal draws no SVG', async ($, on) => {
