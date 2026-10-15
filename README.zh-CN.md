@@ -43,7 +43,7 @@
 
 1. 添加插件市场（就是一份插件列表）：
    ```text
-   /plugin marketplace add jesselei1102-hue/agentzero-claude-mod
+   /plugin marketplace add jesselei1102-hue/agentroot-claude-mod
    ```
 2. 安装插件。问你范围时，选最小的（project 或 local），插件就只在这个项目里工作：
    ```text
