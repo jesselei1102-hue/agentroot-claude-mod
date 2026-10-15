@@ -15,10 +15,11 @@ const CARD: FactCardData = {
 }
 const noNaN = (svg: string) => expect(/NaN|Infinity|undefined/.test(svg)).toBe(false)
 
-test('designWidth: about 7 px a column, within 240–1100', () => {
-  expect(designWidth(100)).toBe(700)
+// 7 drew the cards about 1.3 times too large in the app (operator's screenshots, 2026-10-15).
+test('designWidth: about 8.8 px a column, within 240–1300', () => {
+  expect(designWidth(100)).toBe(880)
   expect(designWidth(10)).toBe(240)
-  expect(designWidth(400)).toBe(1100)
+  expect(designWidth(400)).toBe(1300)
 })
 
 test('escapeXml', () => {
@@ -45,7 +46,7 @@ test('dotX', () => {
 
 test('every drawing fills the pane width, scales without stretching, and has both palettes', () => {
   for (const d of [memoryHeader(HEAD, 700), groupHeader('Loaded now', 3, 700), factCard(CARD, 700, false), reviewHeader({ waiting: 2, done: 1 }, 700),
-    itemCard({ sentence: 'x', state: 'open', meta: 'Fact', message: null }, 700), bandSvg({ loaded: 3, active: 6, yours: 5, waiting: 2, context: 41, failed: null }, 700)]) {
+    itemCard({ sentence: 'x', state: 'open', meta: 'Fact', message: null }, 700)]) {
     expect(d.svg).toContain('width="100%"')
     expect(d.svg).toContain(`viewBox="0 0 700 ${d.height}"`)
     expect(d.svg).not.toContain('preserveAspectRatio="none"')
@@ -115,10 +116,21 @@ test('itemCard leaves room at the right for Keep and Reject', () => {
   expect(textWidth(shown, 14) <= 400 - 17 - 150).toBe(true)
 })
 
+// Scaled to its slot, the band came out larger than its buttons and cut "context 41%" (operator, 2026-10-15).
+test('bandSvg is drawn at its own width, 1:1, so nothing is scaled or cut', () => {
+  const b = bandSvg({ loaded: 3, active: 6, yours: 5, waiting: 2, context: 41, failed: null }, 2000)
+  expect(b.svg).toContain(`width="${b.width}" height="28" viewBox="0 0 ${b.width} 28"`)
+  expect(b.svg).not.toContain('width="100%"')
+  expect(b.width > 300 && b.width < 700).toBe(true)
+  const narrow = bandSvg({ loaded: 3, active: 6, yours: 5, waiting: 2, context: 41, failed: null }, 380)
+  expect(narrow.width <= 380).toBe(true)
+  expect(narrow.svg).not.toContain('context')
+})
+
 test('bandSvg: brand, figures, context; a failed hot set in red', () => {
-  const ok = bandSvg({ loaded: 3, active: 6, yours: 5, waiting: 2, context: 41, failed: null }, 700).svg
+  const ok = bandSvg({ loaded: 3, active: 6, yours: 5, waiting: 2, context: 41, failed: null }, 2000).svg
   for (const s of ['AgentZero', '3/6 loaded', '5/6 yours', '2 waiting', '41%']) expect(ok).toContain(s)
-  const bad = bandSvg({ loaded: 3, active: 6, yours: 5, waiting: 0, context: 85, failed: 'exit 1' }, 700).svg
+  const bad = bandSvg({ loaded: 3, active: 6, yours: 5, waiting: 0, context: 85, failed: 'exit 1' }, 2000).svg
   expect(bad).toContain('hot set not loaded (exit 1)')
   expect(bad).not.toContain('waiting')
 })

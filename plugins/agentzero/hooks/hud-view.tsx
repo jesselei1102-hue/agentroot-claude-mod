@@ -162,6 +162,21 @@ function cardData(r: MemoryRow, now: number) {
   }
 }
 
+// A card's action: a plain Button (a bordered one takes the keyboard and loses the next click) with
+// its label in colour, in a round outline of that colour, centred on the card's height at its right.
+function actionPill(els: Els, key: string, label: string, color: 'error' | 'suggestion', onPress: () => unknown) {
+  const { Box, Text, Button } = els
+  return (
+    <Box position="absolute" top={0} bottom={0} right={1} flexDirection="row" alignItems="center">
+      <Box borderStyle="round" borderColor={color} paddingX={1}>
+        <Button key={key} plain={true} onPress={onPress}>
+          <Text color={color}>{label}</Text>
+        </Button>
+      </Box>
+    </Box>
+  )
+}
+
 // A row: its card, and laid over it on hover the tinted card with the operator's words and Forget.
 // A forgotten row shows Restore, and a failed one Forget, without hover.
 function drawnFactRow(els: Els, r: MemoryRow, act: MemoryActions, ctx: ViewCtx) {
@@ -170,11 +185,7 @@ function drawnFactRow(els: Els, r: MemoryRow, act: MemoryActions, ctx: ViewCtx) 
   const w = designWidth(ctx.columns)
   const data = cardData(r, ctx.now)
   const id = r.fact.id
-  const button = (key: string, label: string, onPress: () => unknown) => (
-    <Box position="absolute" top={1} right={1}>
-      <Button key={key} label={label} plain={true} dimColor={true} onPress={onPress} />
-    </Box>
-  )
+  const button = (key: string, label: string, color: 'error' | 'suggestion', onPress: () => unknown) => actionPill(els, key, label, color, onPress)
   const plain = factCard(data, w, false)
   return (
     <Box key={`az-row-${id}`} flexDirection="column">
@@ -182,11 +193,11 @@ function drawnFactRow(els: Els, r: MemoryRow, act: MemoryActions, ctx: ViewCtx) 
       {r.state === 'active' && (
         <Box position="absolute" top={0} left={0} right={0} display="none" hover={{ display: 'flex' }} flexDirection="column">
           <Svg source={factCard(data, w, true).svg} alt={data.quote !== null ? `Your words: ${data.quote}` : 'Inferred by the assistant'} />
-          {r.actionable && button(`az-forget-${id}`, 'Forget', () => act.forget(r.fact))}
+          {r.actionable && button(`az-forget-${id}`, 'Forget', 'error', () => act.forget(r.fact))}
         </Box>
       )}
-      {r.state === 'forgotten' && button(`az-restore-${id}`, 'Restore', () => act.restore(r.fact))}
-      {r.state === 'failed' && r.actionable && button(`az-forget-${id}`, 'Forget', () => act.forget(r.fact))}
+      {r.state === 'forgotten' && button(`az-restore-${id}`, '↺ Restore', 'suggestion', () => act.restore(r.fact))}
+      {r.state === 'failed' && r.actionable && button(`az-forget-${id}`, 'Forget', 'error', () => act.forget(r.fact))}
     </Box>
   )
 }
@@ -342,12 +353,11 @@ export function band(els: Els, m: BandModel, act: BandActions, ctx: ViewCtx) {
   if (m.drawn !== null && drawsSvg(els, ctx)) {
     const Svg = els.Svg!
     // the buttons take about 22 columns at the right
-    const d = bandSvg(m.drawn, designWidth(Math.max(40, ctx.columns - 22)))
+    const d = bandSvg(m.drawn, Math.max(240, (ctx.columns - 22) * 8.8))
     return (
       <Box flexDirection="row" alignItems="center" gap={2}>
-        <Box flexGrow={1} flexShrink={1} minWidth={0}>
-          <Svg source={d.svg} alt={m.alt} />
-        </Box>
+        <Svg source={d.svg} alt={m.alt} width={d.width} height={d.height} />
+        <Box flexGrow={1} />
         {m.showReview && <Button key="az-review" label="Review" variant="primary" onPress={act.review} />}
         {m.showMemory && <Button key="az-memory" label="Memory" onPress={act.memory} />}
       </Box>

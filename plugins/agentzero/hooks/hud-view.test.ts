@@ -51,3 +51,24 @@ test('the figures count the snapshot Facts, not the displayed rows', () => {
   const f = memoryFigures(view([row(A), row(B), failed], [A, B]), Date.parse('2026-10-15T12:00:00Z'))
   expect([f.loaded, f.yours, f.active, f.dots.length]).toEqual([1, 1, 2, 2])
 })
+
+// Forget reads as a destructive action (operator, 2026-10-15: "enhance the forget button"): a red
+// label in a round red outline, centred on the card's height. The Button stays plain: a bordered
+// Button takes the keyboard and the next click is lost (1.3).
+test('desktop: Forget is a red pill centred on the hovered card; Restore a blue one', () => {
+  const pill = (nodes: Node[], key: string) => {
+    const button = nodes.find(n => n.type === 'Button' && n.props.key === key)!
+    const holder = nodes.find(n => n.type === 'Box' && walk(n.props.children).includes(button) && n.props.borderStyle === 'round')!
+    return { button, holder, label: walk(button.props.children).find(n => n.type === 'Text')! }
+  }
+  const active = pill(walk(memoryPane(ELS, view([row(A)], [A]), act, ctx('desktop'))), 'az-forget-fact:a')
+  expect(active.button.props.plain).toBe(true)
+  expect(active.holder.props.borderColor).toBe('error')
+  expect(active.label.props.color).toBe('error')
+  const centre = walk(memoryPane(ELS, view([row(A)], [A]), act, ctx('desktop'))).find(n => n.type === 'Box' && n.props.position === 'absolute' && n.props.alignItems === 'center' && n.props.top === 0 && n.props.bottom === 0)
+  expect(centre).toBeDefined()
+  const gone: MemoryRow = { ...row(A, 'forgotten'), actionable: false }
+  const restore = pill(walk(memoryPane(ELS, view([gone], []), act, ctx('desktop'))), 'az-restore-fact:a')
+  expect(restore.holder.props.borderColor).toBe('suggestion')
+  expect(restore.label.props.color).toBe('suggestion')
+})

@@ -4,9 +4,10 @@
 // Each drawing is laid out at a design width and scaled to the pane (width 100%, never
 // stretched), and picks its light or dark palette itself (the app's theme can be "auto").
 
-const PX_PER_COLUMN = 7
+// Measured from the operator's screenshots: 7 drew everything about 1.3 times too large.
+const PX_PER_COLUMN = 8.8
 const MIN_W = 240
-const MAX_W = 1100
+const MAX_W = 1300
 const DAYS = 30
 const FONT = `-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, sans-serif`
 
@@ -76,7 +77,7 @@ text{font-family:${FONT};font-variant-numeric:tabular-nums}
 }
 </style>`
 
-export type Drawing = { svg: string; height: number }
+export type Drawing = { svg: string; height: number; width?: number }
 
 function drawing(w: number, h: number, body: string): Drawing {
   return { svg: `<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 ${w} ${h}">${STYLE}${body}</svg>`, height: h }
@@ -290,7 +291,9 @@ export function itemCard(c: ItemCardData, w: number): Drawing {
 
 export type BandData = { loaded: number; active: number; yours: number; waiting: number; context: number | null; failed: string | null }
 
-export function bandSvg(b: BandData, w: number): Drawing {
+// The band is drawn at its own width and 1:1 (no scaling to a slot), so it keeps the size of the
+// buttons beside it and is never cut; the context goes only when it fits within maxW.
+export function bandSvg(b: BandData, maxW: number): Drawing {
   const y = 19
   let x = 0
   let s = `<rect x="2" y="${y - 10}" width="9" height="9" rx="1.5" transform="rotate(45 6.5 ${y - 5.5})" class="claude"/>`
@@ -299,11 +302,11 @@ export function bandSvg(b: BandData, w: number): Drawing {
   x += textWidth('AgentZero', 13) * 1.05 + 16
   if (b.failed !== null) {
     const msg = `hot set not loaded (${b.failed})`
-    s += `<circle cx="${x + 4}" cy="${y - 4.5}" r="4" class="red"/>` + text(x + 13, y, msg, { cls: 'red', size: 13 })
+    s += `<circle cx="${n2(x + 4)}" cy="${y - 4.5}" r="4" class="red"/>` + text(x + 13, y, msg, { cls: 'red', size: 13 })
     x += 13 + textWidth(msg, 13) + 16
   } else {
     const msg = `${b.loaded}/${b.active} loaded`
-    s += `<circle cx="${x + 4}" cy="${y - 4.5}" r="4" class="blue"/>` + text(x + 13, y, msg, { cls: 'blue', size: 13, weight: 500 })
+    s += `<circle cx="${n2(x + 4)}" cy="${y - 4.5}" r="4" class="blue"/>` + text(x + 13, y, msg, { cls: 'blue', size: 13, weight: 500 })
     x += 13 + textWidth(msg, 13) + 16
   }
   const yours = `${b.yours}/${b.active} yours`
@@ -311,17 +314,23 @@ export function bandSvg(b: BandData, w: number): Drawing {
   x += 14 + textWidth(yours, 13) + 16
   if (b.waiting > 0) {
     const msg = `${b.waiting} waiting`
-    s += `<circle cx="${x + 5}" cy="${y - 4.5}" r="7" class="amber-t"/><circle cx="${x + 5}" cy="${y - 4.5}" r="3.5" class="amber"/>` +
+    s += `<circle cx="${n2(x + 5)}" cy="${y - 4.5}" r="7" class="amber-t"/><circle cx="${n2(x + 5)}" cy="${y - 4.5}" r="3.5" class="amber"/>` +
       text(x + 15, y, msg, { cls: 'amber', size: 13, weight: 500 })
     x += 15 + textWidth(msg, 13) + 16
   }
-  if (b.context !== null && x + 120 <= w) {
+  if (b.context !== null) {
     const warn = b.context >= 80
     const barW = 56
-    const lit = Math.max(b.context > 0 ? 3 : 0, (Math.min(100, b.context) / 100) * barW)
-    s += `<rect x="${n2(x)}" y="${y - 7}" width="${barW}" height="5" rx="2.5" class="hair"/>` +
-      (lit > 0 ? `<rect x="${n2(x)}" y="${y - 7}" width="${n2(lit)}" height="5" rx="2.5" class="${warn ? 'amber' : 'blue'}"/>` : '') +
-      text(x + barW + 8, y, `context ${Math.round(b.context)}%${warn ? ' · reloads after compaction' : ''}`, { cls: warn ? 'amber' : 'mute', size: 12.5 })
+    const label = `context ${Math.round(b.context)}%${warn ? ' · reloads after compaction' : ''}`
+    const end = x + barW + 8 + textWidth(label, 12.5)
+    if (end <= maxW) {
+      const lit = Math.max(b.context > 0 ? 3 : 0, (Math.min(100, b.context) / 100) * barW)
+      s += `<rect x="${n2(x)}" y="${y - 7}" width="${barW}" height="5" rx="2.5" class="hair"/>` +
+        (lit > 0 ? `<rect x="${n2(x)}" y="${y - 7}" width="${n2(lit)}" height="5" rx="2.5" class="${warn ? 'amber' : 'blue'}"/>` : '') +
+        text(x + barW + 8, y, label, { cls: warn ? 'amber' : 'mute', size: 12.5 })
+      x = end + 16
+    }
   }
-  return drawing(w, 28, s)
+  const width = Math.ceil(x - 16 + 4)
+  return { svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="28" viewBox="0 0 ${width} 28">${STYLE}${s}</svg>`, height: 28, width }
 }
