@@ -137,9 +137,11 @@ export function world(
   }
   on('ui.status', async (_$, e) => {
     w.statuses.push(e.text)
+    return { value: undefined }
   })
   on('ui.toast', async (_$, e) => {
     w.toasts.push(e.text)
+    return { value: undefined }
   })
   return w
 }

@@ -3,12 +3,11 @@ import type { On } from 'claude-code'
 import type { Fact, HudState, MemoryResults, PaneNote, PaneResults, PendingItem, RawOpen } from '../types'
 import { bandModel } from './band'
 import { cardForCall, groupCard, type CallLike, type Card } from './cards'
-import { MEMORY_PANE, MEMORY_TITLE, cancelForget, forgetArgv, forgetResult, memoryRows, mergeMemory, restoreResult, type MemoryRow } from './memory'
-import { KIND_LABEL, REVIEW_PANE, REVIEW_TITLE, mergeResult, paneResult, paneRows, reviewArgv } from './pane'
+import { band, memoryPane, reviewPane, toned, type El, type Els } from './hud-view'
+import { MEMORY_PANE, MEMORY_TITLE, cancelForget, forgetArgv, forgetResult, memoryRows, mergeMemory, restoreResult } from './memory'
+import { REVIEW_PANE, REVIEW_TITLE, mergeResult, paneResult, paneRows, reviewArgv } from './pane'
 import { locateWorkspace, sessionData, writeMarks } from './session'
 import { EMPTY_HUD, refreshJob, runTool, type HudIo } from './snapshot'
-import type { PillTone } from './band'
-import { factMeta, reviewMeta, themeOf } from './view'
 
 const hudAtom = atom({ plugin: 'agentzero', key: 'hud' } as const, EMPTY_HUD as HudState)
 const hotSetErrorAtom = atom({ plugin: 'agentzero', key: 'hotSetError' } as const, null as string | null)
@@ -29,15 +28,6 @@ function field(value: unknown, key: string): string {
 function rawText(call: CallLike): string {
   if (call.tool === 'Read') return field(call.input, 'file_path')
   return `$ ${field(call.input, 'command')}\n${field(call.output, 'stdout')}`.trimEnd()
-}
-
-type El = (props: Record<string, unknown>) => never
-
-// A tone as Text props: a theme key, dim for grey, nothing for ink.
-function toned(tone: PillTone): Record<string, unknown> {
-  const color = themeOf(tone)
-  if (color !== undefined) return { color }
-  return tone === 'grey' ? { dimColor: true } : {}
 }
 
 // A card as two lines: the label in its colour, the title; the detail dim under them.
@@ -79,31 +69,12 @@ export function registerHud(on: On): void {
       }
       await data.gate.run(refreshJob(io, workspace))
     }
-    const { Box, Text, Button } = $.ui.resolve(e) as Record<string, El>
-    const review = m.showReview ? <Button key="az-review" label="Review" variant="primary" onPress={() => openPane(REVIEW_PANE, REVIEW_TITLE)} /> : null
-    const memory = m.showMemory ? <Button key="az-memory" label="Memory" onPress={() => openPane(MEMORY_PANE, MEMORY_TITLE)} /> : null
-    const parts = [...m.pills]
-    if (m.ring !== null) {
-      const note = m.ring.note !== null ? ` · ${m.ring.note}` : ''
-      parts.push({ text: `context ${m.ring.percent}%${note}`, tone: m.ring.tone === 'amber' ? 'amber' : 'grey' })
-    }
-    return (
-      <Box flexDirection="row" alignItems="center" gap={1}>
-        <Text bold={true}>AgentZero</Text>
-        <Box flexDirection="row" flexGrow={1}>
-          {parts.flatMap((p, i) => [
-            i > 0 ? <Text dimColor={true}> · </Text> : null,
-            <Text {...toned(p.tone)}>{p.text}</Text>,
-          ])}
-        </Box>
-        {review}
-        {memory}
-      </Box>
-    )
+    const els = $.ui.resolve(e) as unknown as Els
+    return band(els, m, { review: () => openPane(REVIEW_PANE, REVIEW_TITLE), memory: () => openPane(MEMORY_PANE, MEMORY_TITLE) })
   })
 
   on('ui.render', { component: 'Pane', requestId: REVIEW_PANE }, async ($, e) => {
-    const { Box, Text, Button } = $.ui.resolve(e) as Record<string, El>
+    const { Text } = $.ui.resolve(e) as Record<string, El>
     const data = sessionData(await $.session.id())
     const workspace = await locateWorkspace(data, () => $.session.root(), p => $.fs.stat(p).then(() => true, () => false))
     if (workspace === null) return <Text dimColor={true}>This is not an AgentZero workspace.</Text>
@@ -136,36 +107,12 @@ export function registerHud(on: On): void {
       }
       await data.gate.run(refreshJob(io, workspace))
     }
-    // Plain: a bordered button takes the keyboard, and the redraw after a press then loses the next click.
-    const buttons = (item: PendingItem) => (
-      <Box flexDirection="row" gap={2}>
-        <Button key={`az-keep-${item.id}`} label="✓ Keep" plain={true} onPress={() => decide(item, 'keep')} />
-        <Button key={`az-reject-${item.id}`} label="✗ Reject" plain={true} dimColor={true} onPress={() => decide(item, 'reject')} />
-      </Box>
-    )
-    return (
-      <Box flexDirection="column" gap={1}>
-        <Text dimColor={true}>{`${open} waiting · ${done} done`}</Text>
-        {rows.map(row => {
-          const rejected = row.state === 'rejected'
-          return (
-            <Box borderStyle="round" borderDimColor={true} paddingX={1} flexDirection="column">
-              <Text strikethrough={rejected} dimColor={rejected}>{row.item.sentence}</Text>
-              <Text dimColor={true}>{`${KIND_LABEL[row.item.kind] ?? row.item.kind} · ${reviewMeta(row.item)}`}</Text>
-              {row.state === 'kept' && <Text color="success">✓ Kept</Text>}
-              {rejected && <Text dimColor={true}>✗ Rejected</Text>}
-              {row.state === 'failed' && <Text color="error">{row.message ?? ''}</Text>}
-              {row.actionable && buttons(row.item)}
-            </Box>
-          )
-        })}
-        {rows.length === 0 && <Text color="success">Nothing is waiting for you ✓</Text>}
-      </Box>
-    )
+    // Plain buttons: a bordered one takes the keyboard, and the redraw after a press then loses the next click.
+    return reviewPane($.ui.resolve(e) as unknown as Els, { rows, open, done }, { decide })
   })
 
   on('ui.render', { component: 'Pane', requestId: MEMORY_PANE }, async ($, e) => {
-    const { Box, Text, Button } = $.ui.resolve(e) as Record<string, El>
+    const { Text } = $.ui.resolve(e) as Record<string, El>
     const data = sessionData(await $.session.id())
     const workspace = await locateWorkspace(data, () => $.session.root(), p => $.fs.stat(p).then(() => true, () => false))
     if (workspace === null) return <Text dimColor={true}>This is not an AgentZero workspace.</Text>
@@ -176,7 +123,7 @@ export function registerHud(on: On): void {
       return <Text dimColor={true}>{hud.error !== null ? `memory unreadable (${hud.error})` : 'reading memory…'}</Text>
     }
     if (hud.snapshot.facts === null) return <Text dimColor={true}>memory unreadable (fact list)</Text>
-    const { rows, active, inHotSet, forgotten, hidden } = memoryRows(hud.snapshot.facts, await read($, memoryResultsAtom))
+    const { rows, active, inHotSet, hidden } = memoryRows(hud.snapshot.facts, await read($, memoryResultsAtom))
     if (rows.length === 0) return <Text dimColor={true}>No Facts yet.</Text>
 
     const refresh = () => {
@@ -218,45 +165,8 @@ export function registerHud(on: On): void {
       }
       await refresh()
     }
-    const head = `${active} active · ${inHotSet} in hot set${forgotten > 0 ? ` · ${forgotten} forgotten` : ''}`
-    const cited = (skills: string[]) =>
-      skills.length === 1
-        ? `Cited by skill ${skills[0]}, which needs a new version`
-        : `Cited by skills ${skills.join(', ')}, which need new versions`
-    return (
-      <Box flexDirection="column" gap={1}>
-        <Text dimColor={true}>{head}</Text>
-        {rows.map((row: MemoryRow) => {
-          const id = row.fact.id
-          const gone = row.state === 'forgotten'
-          const meta = factMeta(row)
-          return (
-            <Box borderStyle="round" borderDimColor={true} paddingX={1} flexDirection="column">
-              <Text strikethrough={gone} dimColor={gone}>{row.fact.sentence}</Text>
-              <Text dimColor={true}>{meta.words}</Text>
-              <Box flexDirection="row">
-                {meta.tags.map(seg => (seg.color !== undefined ? <Text color={seg.color}>{seg.text}</Text> : <Text dimColor={true}>{seg.text}</Text>))}
-              </Box>
-              {gone && <Text dimColor={true}>forgotten</Text>}
-              {(row.state === 'failed' || gone) && row.message !== null && <Text color="error">{row.message}</Text>}
-              {row.citedBy.length > 0 && <Text color="warning">{cited(row.citedBy)}</Text>}
-              {gone ? (
-                <Box flexDirection="row">
-                  <Button key={`az-restore-${id}`} label="Restore" plain={true} dimColor={true} onPress={() => restore(row.fact)} />
-                </Box>
-              ) : (
-                row.actionable && (
-                  <Box flexDirection="row">
-                    <Button key={`az-forget-${id}`} label="Forget" plain={true} dimColor={true} onPress={() => forget(row.fact)} />
-                  </Box>
-                )
-              )}
-            </Box>
-          )
-        })}
-        {hidden > 0 && <Text dimColor={true}>{`+${hidden} older Facts not shown`}</Text>}
-      </Box>
-    )
+    const waiting = hud.snapshot.pending.length
+    return memoryPane($.ui.resolve(e) as unknown as Els, { rows, active, inHotSet, waiting, hidden }, { forget, restore })
   })
 
   on('ui.render', { component: 'ToolUse' }, async ($, e, next) => {

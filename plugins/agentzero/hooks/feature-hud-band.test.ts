@@ -14,7 +14,7 @@ for (const surface of ['desktop', 'terminal'] as const) {
     world(on)
     await $.session.start(START)
     const ui = await $.ui.mount({ plugin: 'agentzero', surface, component: 'AbovePrompt', props: BAND })
-    expect(await bandText(ui)).toBe('AgentZero3 active · 1 waiting · hot set 3 min ago · context 41%'.replace('3 min ago', await hotSetAgo(ui)))
+    expect(await bandText(ui)).toBe(`◆AgentZero3 active1 waitinghot set ${await hotSetAgo(ui)}▰▰▰▱▱▱▱▱context 41%`)
     expect((await ui.find({ type: 'Text', text: '1 waiting' }))?.props.color).toBe('warning')
     expect(await ui.find({ type: 'Svg' })).toBeUndefined()
   })
@@ -96,7 +96,7 @@ test('the pane lists what waits, with keep and reject', async ($, on) => {
   await $.session.start(START)
   const ui = await mountPane($)
   expect(await ui.find({ type: 'Svg' })).toBeUndefined()
-  expect(await ui.find({ text: '1 waiting · 0 done' })).toBeDefined()
+  expect(await bandText(ui)).toContain('Waiting1Done0Waiting for you · 1')
   expect(await ui.find({ text: 'Fact' })).toBeDefined()
   expect(await ui.find({ text: '周五不部署' })).toBeDefined()
   expect(await ui.find({ text: 'agent proposed it · Oct 4' })).toBeDefined()
@@ -112,8 +112,8 @@ test('keep runs the kernel and marks the item kept', async ($, on) => {
   w.snapshotJson = EMPTY
   await ui.press({ key: 'az-keep-fact:a' })
   expect(w.runs.at(-1)).toEqual({ argv: ['/w/a0', 'memory', 'review', '--confirm', 'fact:a'], init: { cwd: '/w', timeoutMs: 10000 } })
-  expect(await ui.find({ text: '0 waiting · 1 done' })).toBeDefined()
-  expect((await ui.find({ type: 'Text', text: '✓ Kept' }))?.props.color).toBe('success')
+  expect(await bandText(ui)).toContain('Waiting0Done1Done · 1')
+  expect((await ui.find({ type: 'Text', text: 'Kept' }))?.props.color).toBe('success')
   expect(await ui.find({ key: 'az-keep-fact:a' })).toBeUndefined()
 })
 
@@ -148,12 +148,11 @@ test('with no snapshot the pane says why, not all clear', async ($, on) => {
   expect(await ui.find({ text: 'Nothing is waiting for you ✓' })).toBeUndefined()
 })
 
-// A row laid out side by side let a long line push the buttons out of the pane (lab, 2026-10-08).
-test('each item in the Review pane is one column', async ($, on) => {
+// A long line must never push the buttons out of the pane (lab, 2026-10-08): the line beside them shrinks.
+test('the line beside the Review buttons shrinks', async ($, on) => {
   world(on)
   await $.session.start(START)
   const ui = await mountPane($)
-  const boxes = (await ui.findAll({ type: 'Box' })).filter((b: any) => b.props.borderStyle === 'round')
-  expect(boxes.length > 0).toBe(true)
-  for (const b of boxes) expect(b.props.flexDirection).toBe('column')
+  const shrinking = (await ui.findAll({ type: 'Box' })).filter((b: any) => b.props.flexShrink === 1 && b.props.minWidth === 0)
+  expect(shrinking.length > 0).toBe(true)
 })

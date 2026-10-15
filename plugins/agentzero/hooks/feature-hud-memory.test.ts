@@ -6,6 +6,10 @@ const A = { id: 'fact:a', sentence: 'Never deploy on Fridays.', said: '周五别
 const B = { id: 'fact:b', sentence: 'Deploys go out on Tuesdays.', said: null, author: 'agent', createdAt: '2026-10-03T14:30:00.000+08:00', scope: 'project', inHotSet: false }
 const json = (facts: unknown) => JSON.stringify({ ...SNAPSHOT, facts })
 
+async function allText(ui: { findAll: (q: { type: string }) => Promise<{ text?: string }[]> }) {
+  return (await ui.findAll({ type: 'Text' })).map(t => String(t.text ?? '')).join('')
+}
+
 async function mount($: any, surface: 'desktop' | 'terminal' = 'desktop') {
   return $.ui.mount({ plugin: 'agentzero', surface, component: 'Pane', props: PANE, requestId: 'agentzero-memory' })
 }
@@ -35,10 +39,10 @@ for (const surface of ['desktop', 'terminal'] as const) {
     await $.session.start(START)
     const ui = await mount($, surface)
     expect(await ui.find({ type: 'Svg' })).toBeUndefined()
-    expect(await ui.find({ text: '2 active · 1 in hot set' })).toBeDefined()
+    expect(await allText(ui)).toContain('Active2In hot set1Waiting1')
     expect(await ui.find({ text: 'Never deploy on Fridays.' })).toBeDefined()
     expect(await ui.find({ text: '“周五别部署”' })).toBeDefined()
-    expect((await ui.find({ type: 'Text', text: /^in hot set$/ }))?.props.color).toBe('suggestion')
+    expect((await ui.find({ type: 'Text', text: '●' }))?.props.color).toBe('suggestion')
     expect(await ui.find({ text: 'Inferred by the assistant, kept by you' })).toBeDefined()
     expect(await ui.find({ key: 'az-forget-fact:b' })).toBeDefined()
   })
@@ -67,9 +71,9 @@ test('forget runs the kernel and keeps the row', async ($, on) => {
   w.snapshotJson = json([B])
   await ui.press({ key: 'az-forget-fact:a' })
   expect(w.runs.at(-1)).toEqual({ argv: ['/w/a0', 'memory', 'forget', 'fact:a'], init: { cwd: '/w', timeoutMs: 10000 } })
-  expect(await ui.find({ text: '1 active · 0 in hot set · 1 forgotten' })).toBeDefined()
+  expect(await allText(ui)).toContain('Active1In hot set0')
+  expect(await allText(ui)).toContain('Forgotten · 1')
   expect((await ui.find({ type: 'Text', text: 'Never deploy on Fridays.' }))?.props.strikethrough).toBe(true)
-  expect(await ui.find({ text: 'forgotten' })).toBeDefined()
   expect(await ui.find({ key: 'az-forget-fact:a' })).toBeUndefined()
 })
 
@@ -81,8 +85,8 @@ test('a forgotten row survives a failed refresh', async ($, on) => {
   const ui = await mount($)
   w.snapshotJson = 'not json'
   await ui.press({ key: 'az-forget-fact:a' })
-  expect(await ui.find({ text: '1 active · 0 in hot set · 1 forgotten' })).toBeDefined()
-  expect(await ui.find({ text: 'forgotten' })).toBeDefined()
+  expect(await allText(ui)).toContain('Active1In hot set0')
+  expect(await allText(ui)).toContain('Forgotten · 1')
 })
 
 test('a failed forget shows the reason and offers Forget again', async ($, on) => {
@@ -136,17 +140,18 @@ test('every way of opening a pane asks for the keyboard', async ($, on) => {
   expect(w.openFocus).toEqual([true, true, true, true])
 })
 
-// A row laid out side by side let a long line push the buttons out of the pane (lab, 2026-10-08).
-test('each Fact is one column, with its words and its date on their own lines', async ($, on) => {
+// A long line must never push Forget out of the pane (lab, 2026-10-08): the line beside it shrinks.
+test('a Fact reads as its sentence, then its words and date beside Forget', async ($, on) => {
   const w = world(on)
   w.snapshotJson = json([A, B])
   await $.session.start(START)
   const ui = await mount($)
   expect(await ui.find({ type: 'Text', text: /^“周五别部署”$/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /^Oct 6$/ })).toBeDefined()
-  const boxes = (await ui.findAll({ type: 'Box' })).filter((b: any) => b.props.borderStyle === 'round')
-  expect(boxes.length > 0).toBe(true)
-  for (const b of boxes) expect(b.props.flexDirection).toBe('column')
+  expect(await allText(ui)).toContain('In hot set · 1●Never deploy on Fridays.')
+  expect(await allText(ui)).toContain('Other Facts · 1○Deploys go out on Tuesdays.')
+  const shrinking = (await ui.findAll({ type: 'Box' })).filter((b: any) => b.props.flexShrink === 1 && b.props.minWidth === 0)
+  expect(shrinking.length > 0).toBe(true)
 })
 
 // A bordered button takes the keyboard when clicked; the redraw that follows removes it, the
@@ -180,7 +185,7 @@ test('Restore brings a forgotten Fact back and offers Forget again', async ($, o
   expect(run.argv.slice(2)).toEqual(['/w', 'fact:a'])
   expect(await ui.find({ key: 'az-forget-fact:a' })).toBeDefined()
   expect(await ui.find({ key: 'az-restore-fact:a' })).toBeUndefined()
-  expect(await ui.find({ text: '2 active · 1 in hot set' })).toBeDefined()
+  expect(await allText(ui)).toContain('Active2In hot set1Waiting1')
 })
 
 test('a Restore that fails keeps the row forgotten and says why', async ($, on) => {

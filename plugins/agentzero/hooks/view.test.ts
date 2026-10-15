@@ -20,11 +20,10 @@ test('shortDate reads the date part, whatever the zone', () => {
   expect(shortDate('soon')).toBeNull()
 })
 
-test('factMeta: words on their own line; date, hot set and task after', () => {
+test('factMeta: the words, then the date and task; the hot set is a section, not a tag', () => {
   const m = factMeta(row(fact({ scope: 'task' })))
   expect(m.words).toBe('“用 pnpm”')
-  expect(text(m.tags)).toBe('Oct 6 · in hot set · task')
-  expect(m.tags.find(s => s.text === 'in hot set')?.color).toBe('suggestion')
+  expect(text(m.tags)).toBe('Oct 6 · task')
 })
 
 test('factMeta: inferred, no hot set when forgotten', () => {
