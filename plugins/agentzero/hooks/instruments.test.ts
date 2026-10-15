@@ -113,7 +113,7 @@ test('itemCard leaves room at the right for Keep and Reject', () => {
   const svg = itemCard({ sentence: long, state: 'open', meta: 'Fact · agent proposed it · 3h', message: null }, 400).svg
   const shown = /<text[^>]*class="ink s"[^>]*>([^<]*)</.exec(svg)![1]!
   expect(shown.endsWith('…')).toBe(true)
-  expect(textWidth(shown, 14) <= 400 - 17 - 150).toBe(true)
+  expect(textWidth(shown, 14) <= 400 - 17 - 190).toBe(true)
 })
 
 // Scaled to its slot, the band came out larger than its buttons and cut "context 41%" (operator, 2026-10-15).

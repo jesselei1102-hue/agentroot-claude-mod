@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 import type { Fact } from '../types'
-import { memoryFigures, memoryPane, type Els, type ViewCtx } from './hud-view'
+import { memoryFigures, memoryPane, reviewPane, type Els, type ViewCtx } from './hud-view'
 import type { MemoryRow } from './memory'
 
 // Recording constructors: each element is { type, props }, so props the engine kit strips (hover) stay.
@@ -59,16 +59,28 @@ test('desktop: Forget is a red pill centred on the hovered card; Restore a blue 
   const pill = (nodes: Node[], key: string) => {
     const button = nodes.find(n => n.type === 'Button' && n.props.key === key)!
     const holder = nodes.find(n => n.type === 'Box' && walk(n.props.children).includes(button) && n.props.borderStyle === 'round')!
-    return { button, holder, label: walk(button.props.children).find(n => n.type === 'Text')! }
+    return { button, holder }
   }
   const active = pill(walk(memoryPane(ELS, view([row(A)], [A]), act, ctx('desktop'))), 'az-forget-fact:a')
   expect(active.button.props.plain).toBe(true)
   expect(active.holder.props.borderColor).toBe('error')
-  expect(active.label.props.color).toBe('error')
   const centre = walk(memoryPane(ELS, view([row(A)], [A]), act, ctx('desktop'))).find(n => n.type === 'Box' && n.props.position === 'absolute' && n.props.alignItems === 'center' && n.props.top === 0 && n.props.bottom === 0)
   expect(centre).toBeDefined()
   const gone: MemoryRow = { ...row(A, 'forgotten'), actionable: false }
   const restore = pill(walk(memoryPane(ELS, view([gone], []), act, ctx('desktop'))), 'az-restore-fact:a')
   expect(restore.holder.props.borderColor).toBe('suggestion')
-  expect(restore.label.props.color).toBe('suggestion')
+})
+
+// Keep and Reject as pills too (operator, 2026-10-15): Keep in green, Reject quiet, centred on the card.
+test('desktop: Keep is a green pill and Reject a quiet one, side by side on each open item', () => {
+  const item = { id: 'fact:p', kind: 'fact', sentence: 'x', provenance: 'agent proposed it', createdAt: null }
+  const nodes = walk(reviewPane(ELS, { rows: [{ item, state: 'open', message: null, actionable: true }], open: 1, done: 0 }, { decide: () => {} }, ctx('desktop')))
+  const holder = (key: string) => {
+    const button = nodes.find(n => n.type === 'Button' && n.props.key === key)!
+    expect(button.props.plain).toBe(true)
+    return nodes.find(n => n.type === 'Box' && n.props.borderStyle === 'round' && walk(n.props.children).includes(button))!
+  }
+  expect(holder('az-keep-fact:p').props.borderColor).toBe('success')
+  expect(holder('az-reject-fact:p').props.borderDimColor).toBe(true)
+  expect(nodes.some(n => n.type === 'Box' && n.props.position === 'absolute' && n.props.alignItems === 'center' && n.props.top === 0 && n.props.bottom === 0)).toBe(true)
 })

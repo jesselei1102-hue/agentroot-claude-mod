@@ -209,7 +209,7 @@ export type FactCardData = {
 }
 
 // Room kept at a card's right for the native button laid over it.
-const BUTTON_ROOM = 84
+const BUTTON_ROOM = 110
 
 // A Fact as a card: its rail (blue when loaded), the sentence, then one line: who said it, how
 // old it is, and pills. Hovered, the card is tinted and the line shows the operator's words.
@@ -271,8 +271,8 @@ export function reviewHeader(f: { waiting: number; done: number }, w: number): D
 
 export type ItemCardData = { sentence: string; state: 'open' | 'kept' | 'rejected' | 'failed'; meta: string; message: string | null }
 
-// Room kept at an open item's right for Keep and Reject.
-const DECIDE_ROOM = 150
+// Room kept at an open item's right for the Keep and Reject pills.
+const DECIDE_ROOM = 190
 
 export function itemCard(c: ItemCardData, w: number): Drawing {
   const textX = 17

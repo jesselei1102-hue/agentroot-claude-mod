@@ -162,17 +162,21 @@ function cardData(r: MemoryRow, now: number) {
   }
 }
 
-// A card's action: a plain Button (a bordered one takes the keyboard and loses the next click) with
-// its label in colour, in a round outline of that colour, centred on the card's height at its right.
-function actionPill(els: Els, key: string, label: string, color: 'error' | 'suggestion', onPress: () => unknown) {
-  const { Box, Text, Button } = els
+// A card's actions: plain Buttons (a bordered one takes the keyboard and loses the next click),
+// each in a round outline, side by side, centred on the card's height at its right. The desktop
+// draws a button's label in its own colour, so the outline carries the meaning: red for Forget,
+// blue for Restore, green for Keep, dim for Reject.
+type Pill = { key: string; label: string; outline: 'error' | 'suggestion' | 'success' | 'dim'; onPress: () => unknown }
+
+function actionPills(els: Els, pills: Pill[]) {
+  const { Box, Button } = els
   return (
-    <Box position="absolute" top={0} bottom={0} right={1} flexDirection="row" alignItems="center">
-      <Box borderStyle="round" borderColor={color} paddingX={1}>
-        <Button key={key} plain={true} onPress={onPress}>
-          <Text color={color}>{label}</Text>
-        </Button>
-      </Box>
+    <Box position="absolute" top={0} bottom={0} right={1} flexDirection="row" alignItems="center" gap={1}>
+      {pills.map(p => (
+        <Box key={`${p.key}-pill`} borderStyle="round" {...(p.outline === 'dim' ? { borderDimColor: true } : { borderColor: p.outline })} paddingX={1}>
+          <Button key={p.key} label={p.label} plain={true} onPress={p.onPress} />
+        </Box>
+      ))}
     </Box>
   )
 }
@@ -180,12 +184,12 @@ function actionPill(els: Els, key: string, label: string, color: 'error' | 'sugg
 // A row: its card, and laid over it on hover the tinted card with the operator's words and Forget.
 // A forgotten row shows Restore, and a failed one Forget, without hover.
 function drawnFactRow(els: Els, r: MemoryRow, act: MemoryActions, ctx: ViewCtx) {
-  const { Box, Button } = els
+  const { Box } = els
   const Svg = els.Svg!
   const w = designWidth(ctx.columns)
   const data = cardData(r, ctx.now)
   const id = r.fact.id
-  const button = (key: string, label: string, color: 'error' | 'suggestion', onPress: () => unknown) => actionPill(els, key, label, color, onPress)
+  const button = (key: string, label: string, outline: Pill['outline'], onPress: () => unknown) => actionPills(els, [{ key, label, outline, onPress }])
   const plain = factCard(data, w, false)
   return (
     <Box key={`az-row-${id}`} flexDirection="column">
@@ -284,7 +288,7 @@ function reviewRow(els: Els, r: PaneRow, act: ReviewActions, ctx: ViewCtx) {
 }
 
 function drawnItemRow(els: Els, r: PaneRow, act: ReviewActions, ctx: ViewCtx) {
-  const { Box, Button } = els
+  const { Box } = els
   const Svg = els.Svg!
   const kind = KIND_LABEL[r.item.kind] ?? r.item.kind
   const old = age(ctx.now, r.item.createdAt)
@@ -293,12 +297,10 @@ function drawnItemRow(els: Els, r: PaneRow, act: ReviewActions, ctx: ViewCtx) {
   return (
     <Box key={`az-item-${r.item.id}`} flexDirection="column">
       <Svg source={itemCard({ sentence: r.item.sentence, state, meta, message: r.message }, designWidth(ctx.columns)).svg} alt={`${r.item.sentence}. ${meta}`} />
-      {r.actionable && (
-        <Box position="absolute" top={1} right={1} flexDirection="row" gap={2}>
-          <Button key={`az-keep-${r.item.id}`} label="✓ Keep" plain={true} onPress={() => act.decide(r.item, 'keep')} />
-          <Button key={`az-reject-${r.item.id}`} label="✗ Reject" plain={true} dimColor={true} onPress={() => act.decide(r.item, 'reject')} />
-        </Box>
-      )}
+      {r.actionable && actionPills(els, [
+        { key: `az-keep-${r.item.id}`, label: '✓ Keep', outline: 'success', onPress: () => act.decide(r.item, 'keep') },
+        { key: `az-reject-${r.item.id}`, label: 'Reject', outline: 'dim', onPress: () => act.decide(r.item, 'reject') },
+      ])}
     </Box>
   )
 }
