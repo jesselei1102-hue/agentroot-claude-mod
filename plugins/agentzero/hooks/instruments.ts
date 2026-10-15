@@ -4,7 +4,8 @@
 
 export const PX_PER_COLUMN = 5.7
 const MIN_PX = 180
-const GRID_BELOW_COLUMNS = 60
+// Below this the four instruments do not fit in one row (60–95 columns overlapped: review, 2026-10-15).
+const GRID_BELOW_COLUMNS = 96
 const DAYS = 30
 
 export function columnsToPx(columns: number): number {
@@ -128,7 +129,7 @@ function timeline(x: number, w: number, grid: boolean, f: MemoryFigures): string
 
 export function memoryCluster(f: MemoryFigures, columns: number): string {
   const width = columnsToPx(columns)
-  const loadedNote = f.loadedAt !== null ? `at ${f.loadedAt}` : 'not loaded yet'
+  const loadedNote = f.loadedAt ?? 'not loaded yet'
   const inferred = `${Math.max(0, f.active - f.yours)} inferred`
   if (columns < GRID_BELOW_COLUMNS) {
     const half = width / 2
@@ -138,7 +139,7 @@ export function memoryCluster(f: MemoryFigures, columns: number): string {
       `<g transform="translate(0 92)">${timeline(0, half, true, f)}${waitingCell(half, half, true, f.waiting)}</g>`)
   }
   const gaugeW = 150
-  const waitW = 110
+  const waitW = 100
   const rule = (x: number) => `<line x1="${n2(x)}" y1="18" x2="${n2(x)}" y2="72" class="axis" stroke-width="1"/>`
   return svg(width, 88, 'row',
     rule(gaugeW - 8) + rule(2 * gaugeW) + rule(width - waitW - 12) +

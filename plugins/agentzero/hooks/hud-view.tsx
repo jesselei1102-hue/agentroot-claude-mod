@@ -13,8 +13,8 @@ export type El = (props: Record<string, unknown>) => never
 export type Els = { Box: El; Text: El; Button: El; Svg?: El }
 export type ViewCtx = { surface: 'terminal' | 'desktop' | 'vscode' | 'mobile'; columns: number; now: number }
 
-// Hover reveals a row's details where the surface has a pointer; the terminal shows them always.
-const hovers = (ctx: ViewCtx) => ctx.surface !== 'terminal'
+// Hover needs a pointer: desktop and VS Code have one; the terminal and the phone show details plainly.
+const hovers = (ctx: ViewCtx) => ctx.surface === 'desktop' || ctx.surface === 'vscode'
 const drawsSvg = (els: Els, ctx: ViewCtx) => els.Svg !== undefined && ctx.surface !== 'terminal'
 
 // A tone as Text props: a theme key, dim for grey, nothing for ink.
@@ -24,27 +24,31 @@ export function toned(tone: PillTone): Record<string, unknown> {
   return tone === 'grey' ? { dimColor: true } : {}
 }
 
-function section({ Box, Text }: Els, title: string, count: number, note: string | null = null) {
+type Note = { text: string; failed: boolean }
+
+function section({ Box, Text }: Els, title: string, count: number, note: Note | null = null) {
   return (
     <Box flexDirection="row" marginTop={1} justifyContent="space-between">
       <Box flexDirection="row">
         <Text bold={true} dimColor={true}>{title}</Text>
         <Text dimColor={true}>{` · ${count}`}</Text>
       </Box>
-      {note !== null && <Text dimColor={true}>{note}</Text>}
+      {note !== null && (note.failed ? <Text color="error">{note.text}</Text> : <Text dimColor={true}>{note.text}</Text>)}
     </Box>
   )
 }
 
 type Mark = { glyph: string; tone: PillTone }
 
+// rows are what the pane lists (capped, with rows a press left behind); facts are the snapshot's
+// Facts still active, which every figure counts, as the band does.
 export type MemoryView = {
   rows: MemoryRow[]
+  facts: Fact[]
   active: number
-  inHotSet: number
   waiting: number
   hidden: number
-  loadedAt: string | null
+  hotSet: Note | null
 }
 
 export type MemoryActions = { forget: (fact: Fact) => unknown; restore: (fact: Fact) => unknown }
@@ -118,16 +122,15 @@ function factRow(els: Els, r: MemoryRow, act: MemoryActions, ctx: ViewCtx) {
 }
 
 export function memoryFigures(v: MemoryView, now: number): MemoryFigures {
-  const kept = v.rows.filter(r => r.state !== 'forgotten').map(r => r.fact)
-  const dated = kept.filter(f => f.createdAt !== null && !Number.isNaN(Date.parse(f.createdAt)))
+  const dated = v.facts.filter(f => f.createdAt !== null && !Number.isNaN(Date.parse(f.createdAt)))
   const times = dated.map(f => Date.parse(f.createdAt!))
   const iso = (t: number) => new Date(t).toISOString()
   return {
-    loaded: kept.filter(f => f.inHotSet).length,
+    loaded: v.facts.filter(f => f.inHotSet).length,
     active: v.active,
-    yours: kept.filter(f => f.said !== null).length,
+    yours: v.facts.filter(f => f.said !== null).length,
     waiting: v.waiting,
-    loadedAt: v.loadedAt,
+    loadedAt: v.hotSet?.text ?? null,
     dots: dated.map(f => ({ days: (now - Date.parse(f.createdAt!)) / DAY, loaded: f.inHotSet, title: f.sentence })),
     oldest: times.length > 0 ? age(now, iso(Math.min(...times))) : null,
     newest: times.length > 0 ? age(now, iso(Math.max(...times))) : null,
@@ -150,12 +153,12 @@ export function memoryPane(els: Els, v: MemoryView, act: MemoryActions, ctx: Vie
   const hot = v.rows.filter(r => r.state !== 'forgotten' && r.fact.inHotSet)
   const other = v.rows.filter(r => r.state !== 'forgotten' && !r.fact.inHotSet)
   const gone = v.rows.filter(r => r.state === 'forgotten')
-  const group = (title: string, rows: MemoryRow[], note: string | null = null) =>
+  const group = (title: string, rows: MemoryRow[], note: Note | null = null) =>
     rows.length === 0 ? [] : [section(els, title, rows.length, note), ...rows.map(r => factRow(els, r, act, ctx))]
   return (
     <Box flexDirection="column" gap={1}>
       {memoryInstruments(els, v, ctx)}
-      {group('LOADED NOW', hot, v.loadedAt !== null ? `loaded ${v.loadedAt}` : null)}
+      {group('LOADED NOW', hot, v.hotSet === null || v.hotSet.failed ? v.hotSet : { text: `loaded ${v.hotSet.text}`, failed: false })}
       {group('NOT LOADED', other)}
       {group('FORGOTTEN', gone)}
       {v.hidden > 0 && <Text dimColor={true}>{`+${v.hidden} older Facts not shown`}</Text>}

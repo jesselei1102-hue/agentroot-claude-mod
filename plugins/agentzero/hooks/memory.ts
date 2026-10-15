@@ -19,7 +19,7 @@ function newestFirst(x: Fact, y: Fact): number {
 export function memoryRows(
   facts: readonly Fact[],
   results: MemoryResults,
-): { rows: MemoryRow[]; active: number; inHotSet: number; forgotten: number; hidden: number } {
+): { rows: MemoryRow[]; kept: Fact[]; active: number; inHotSet: number; forgotten: number; hidden: number } {
   const row = (fact: Fact, listed: boolean): MemoryRow => {
     const r = results[fact.id]
     if (r === undefined) return { fact, state: 'active', message: null, citedBy: [], actionable: listed }
@@ -42,6 +42,7 @@ export function memoryRows(
   const kept = facts.filter(f => results[f.id]?.outcome !== 'forgotten')
   return {
     rows: rows.slice(0, MEMORY_ROW_CAP),
+    kept,
     active: kept.length,
     inHotSet: kept.filter(f => f.inHotSet).length,
     forgotten: Object.values(results).filter(r => r.outcome === 'forgotten').length,

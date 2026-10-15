@@ -2,7 +2,7 @@ import { expect, test } from 'claude-code/testing'
 import { columnsToPx, dotX, escapeXml, memoryCluster, reviewCluster, ringPath, textGauge, type MemoryFigures } from './instruments'
 
 const F: MemoryFigures = {
-  loaded: 3, active: 5, yours: 4, waiting: 2, loadedAt: '14:02',
+  loaded: 3, active: 5, yours: 4, waiting: 2, loadedAt: 'at 14:02',
   dots: [{ days: 0.1, loaded: true, title: 'a < b & "c"' }, { days: 40, loaded: false, title: 'old' }],
   oldest: '6w', newest: 'now',
 }
@@ -40,6 +40,7 @@ test('memoryCluster: figures, escaped titles, both palettes, no NaN', () => {
 
 test('memoryCluster before any hot set says so', () => {
   expect(memoryCluster({ ...F, loadedAt: null }, 140)).toContain('not loaded yet')
+  expect(memoryCluster({ ...F, loadedAt: '1d ago' }, 140)).toContain('1d ago')
 })
 
 test('memoryCluster with nothing active reads 0 / 0', () => {
@@ -65,4 +66,14 @@ test('textGauge', () => {
   expect(textGauge(1, 50)).toBe('▰▱▱▱▱')
   expect(textGauge(0, 0)).toBe('▱▱▱▱▱')
   expect(textGauge(5, 5, 8)).toBe('▰▰▰▰▰▰▰▰')
+})
+
+// Review: at 60–95 columns the row layout put WAITING inside YOUR WORDS and ran the axis backwards.
+test('the row layout needs 96 columns; narrower panes get the grid', () => {
+  expect(memoryCluster(F, 80)).toContain('data-layout="grid"')
+  expect(memoryCluster(F, 95)).toContain('data-layout="grid"')
+  const row = memoryCluster(F, 96)
+  expect(row).toContain('data-layout="row"')
+  const [, x1, x2] = /<line x1="([\d.]+)" y1="46" x2="([\d.]+)" y2="46"/.exec(row)!
+  expect(Number(x2) - Number(x1) >= 100).toBe(true)
 })

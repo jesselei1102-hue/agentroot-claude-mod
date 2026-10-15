@@ -62,7 +62,7 @@ Trust is read from four signals, all wanted (operator: "All"):
 - Ring gauge **Your words**: Facts with the operator's words / active Facts; under it `N inferred`.
 - **Timeline**: the last 30 days, today at the right; one dot per active Fact at its `created_at` (filled blue when loaded, hollow when not); a Fact older than 30 days sits on the left edge. Under it `OLDEST 9d · NEWEST 2h`. A dot's `<title>` is the Fact's sentence.
 - **Waiting** light: the number of items waiting in Review; amber with a soft glow when more than 0, grey at 0.
-- Narrower than 60 columns: the four instruments in a 2 × 2 grid.
+- Narrower than 96 columns: the four instruments in a 2 × 2 grid (at 60–95 they overlapped in one row; final review, 2026-10-15).
 
 **2. The list** (components):
 

@@ -14,7 +14,7 @@
 
 - Desktop first; the terminal must work (same tree, no `Svg`, hover lines always shown).
 - Elements: `Box`, `Text`, `Button`, `Svg` (desktop only). Pane buttons `plain={true}`.
-- SVG width: `bodyColumns × 5.7` px, no `preserveAspectRatio="none"`; under 60 columns the cluster is a 2 × 2 grid.
+- SVG width: `bodyColumns × 5.7` px, no `preserveAspectRatio="none"`; under 96 columns the cluster is a 2 × 2 grid.
 - SVG palette: one light and one dark set, switched by `@media (prefers-color-scheme: dark)` inside the SVG. Blue = loaded, amber = waiting, green = kept/done, red = failed, grey = secondary.
 - SVG type: `-apple-system, system-ui, sans-serif`; labels 12–13 px, figures 20 px.
 - Theme keys in components: `suggestion` (blue), `warning` (amber), `success` (green), `error` (red), `dimColor` for grey.

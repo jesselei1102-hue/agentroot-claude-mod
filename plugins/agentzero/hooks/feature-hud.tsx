@@ -4,7 +4,7 @@ import type { Fact, HudState, MemoryResults, PaneNote, PaneResults, PendingItem,
 import { bandModel } from './band'
 import { cardForCall, groupCard, type CallLike, type Card } from './cards'
 import { band, memoryPane, reviewPane, toned, type El, type Els, type ViewCtx } from './hud-view'
-import { clockTime } from './view'
+import { hotSetNote } from './view'
 import { MEMORY_PANE, MEMORY_TITLE, cancelForget, forgetArgv, forgetResult, memoryRows, mergeMemory, restoreResult } from './memory'
 import { REVIEW_PANE, REVIEW_TITLE, mergeResult, paneResult, paneRows, reviewArgv } from './pane'
 import { locateWorkspace, sessionData, writeMarks } from './session'
@@ -125,7 +125,7 @@ export function registerHud(on: On): void {
       return <Text dimColor={true}>{hud.error !== null ? `memory unreadable (${hud.error})` : 'reading memory…'}</Text>
     }
     if (hud.snapshot.facts === null) return <Text dimColor={true}>memory unreadable (fact list)</Text>
-    const { rows, active, inHotSet, hidden } = memoryRows(hud.snapshot.facts, await read($, memoryResultsAtom))
+    const { rows, kept, active, hidden } = memoryRows(hud.snapshot.facts, await read($, memoryResultsAtom))
     if (rows.length === 0) return <Text dimColor={true}>No Facts yet.</Text>
 
     const refresh = () => {
@@ -168,9 +168,10 @@ export function registerHud(on: On): void {
       await refresh()
     }
     const waiting = hud.snapshot.pending.length
-    const loadedAt = clockTime(hud.snapshot.hotSet?.at ?? null)
-    const ctx: ViewCtx = { surface: e.surface, columns: e.props.bodyColumns, now: await $.clock.now() }
-    return memoryPane($.ui.resolve(e) as unknown as Els, { rows, active, inHotSet, waiting, hidden, loadedAt }, { forget, restore }, ctx)
+    const now = await $.clock.now()
+    const hotSet = hotSetNote(now, hud.snapshot.hotSet?.at ?? null, await read($, hotSetErrorAtom))
+    const ctx: ViewCtx = { surface: e.surface, columns: e.props.bodyColumns, now }
+    return memoryPane($.ui.resolve(e) as unknown as Els, { rows, facts: kept, active, waiting, hidden, hotSet }, { forget, restore }, ctx)
   })
 
   on('ui.render', { component: 'ToolUse' }, async ($, e, next) => {

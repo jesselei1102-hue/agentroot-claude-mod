@@ -55,9 +55,11 @@ export function columnsInline(columns: number): boolean {
   return columns >= 70
 }
 
-// "14:02", the hot set's load time in the clock's own zone; null when unknown.
-export function clockTime(iso: string | null): string | null {
+// The hot set's load, for the pane: "at 14:02" today, "1d ago" before today, the reason when it failed.
+export function hotSetNote(now: number, iso: string | null, error: string | null): { text: string; failed: boolean } | null {
+  if (error !== null) return { text: `not loaded (${error})`, failed: true }
   const at = iso !== null ? new Date(iso) : null
   if (at === null || Number.isNaN(at.getTime())) return null
-  return `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`
+  if (at.toDateString() !== new Date(now).toDateString()) return { text: `${age(now, iso)} ago`, failed: false }
+  return { text: `at ${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`, failed: false }
 }

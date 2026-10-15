@@ -1,5 +1,5 @@
 import { expect, test } from 'claude-code/testing'
-import { SNAPSHOT, START, world } from './test-world'
+import { PROMPT, SNAPSHOT, START, world } from './test-world'
 
 const PANE = { title: 'AgentZero · Memory', isFocused: false, bodyColumns: 140, placement: 'dock' as const, scroll: { offset: 0, bodyRows: 30 }, view: {} }
 const A = { id: 'fact:a', sentence: 'Never deploy on Fridays.', said: '周五别部署', author: 'human', createdAt: '2026-10-06T10:17:00.000+08:00', scope: 'project', inHotSet: true }
@@ -236,4 +236,16 @@ test('a Restore that fails keeps the row forgotten and says why', async ($, on) 
   await ui.press({ key: 'az-restore-fact:a' })
   expect((await ui.find({ type: 'Text', text: 'a newer Fact replaced it: Deploy on Mondays.' }))?.props.color).toBe('error')
   expect(await ui.find({ key: 'az-restore-fact:a' })).toBeDefined()
+})
+
+// Review: the band said the hot set failed while the pane still claimed "loaded at 14:02".
+test('a failed hot set shows in the pane, as in the band', async ($, on) => {
+  const w = world(on)
+  w.snapshotJson = json([A, B])
+  await $.session.start(START)
+  w.setRun({ exitCode: 1, stdout: '' })
+  await $.prompt.submit(PROMPT('one'))
+  const ui = await mount($)
+  expect((await ui.find({ type: 'Text', text: 'not loaded (exit 1)' }))?.props.color).toBe('error')
+  expect(await cluster(ui)).toContain('not loaded (exit 1)')
 })
