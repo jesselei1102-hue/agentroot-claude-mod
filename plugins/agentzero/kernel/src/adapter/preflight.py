@@ -23,10 +23,14 @@ from typing import Literal
 import yaml
 
 from adapter.claude import REGISTRATIONS as CLAUDE_REGISTRATIONS
-from adapter.codex import GENERATED, agents_md
+from adapter.codex import (
+    GENERATED,
+    LEGACY_CURSOR_RULE,
+    LEGACY_CURSOR_RULE_HEAD,
+    agents_md,
+)
 from adapter.codex import HOOK_EVENTS as CODEX_EVENTS
 from adapter.cursor import HOOK_EVENTS as CURSOR_EVENTS
-from adapter.cursor import system_rule
 from adapter.vendor import (
     VENDORED_PACKAGES,
     framework_version,
@@ -154,15 +158,14 @@ def _flag_outside_runtime(checks: list[Check]) -> list[Check]:
             "it is being satisfied by an installed copy or PYTHONPATH on this machine, "
             "and will stop working anywhere else"
         ),
-        fix=f"re-run `{command('adapter materialize')}` from a framework checkout",
+        fix=f"re-run `{command('adapter materialize')}`",
     )
     return [replacement if check.name == "hook round trip" else check for check in checks]
 
 
 # Every generated instruction file, the harness that owns it, and how it is built.
-_INSTRUCTIONS: tuple[tuple[str, str, Callable[[str], str]], ...] = (
+INSTRUCTION_FILES: tuple[tuple[str, str, Callable[[str], str]], ...] = (
     ("AGENTS.md", "codex", agents_md),
-    (".cursor/rules/system.mdc", "cursor", system_rule),
 )
 
 
@@ -190,7 +193,17 @@ def _check_instructions(workspace: Path) -> Check:
             if generated
             else "fold what it says into System.md, or delete it, so Codex runs AgentZero",
         )
-    present = [item for item in _INSTRUCTIONS if (workspace / item[0]).is_file()]
+    legacy = workspace / LEGACY_CURSOR_RULE
+    if legacy.is_file() and legacy.read_text(encoding="utf-8").startswith(LEGACY_CURSOR_RULE_HEAD):
+        # Cursor loads AGENTS.md too, so this rule is the System a second time.
+        return Check(
+            name="instructions",
+            status="warn",
+            detail=f"{LEGACY_CURSOR_RULE.as_posix()} is left from an older AgentZero; "
+            "Cursor also reads AGENTS.md, so it loads the System twice",
+            fix=f"{command('adapter materialize')} {shlex.quote(str(workspace))} --harness cursor",
+        )
+    present = [item for item in INSTRUCTION_FILES if (workspace / item[0]).is_file()]
     if not present:
         return Check("instructions", "skip", "no generated instruction files")
     stale = [
@@ -206,9 +219,9 @@ def _check_instructions(workspace: Path) -> Check:
         status="warn",
         detail="written from an older System.md: "
         + ", ".join(f"{name} ({harness})" for name, harness in stale),
-        fix=" && ".join(
-            f"{command('adapter materialize')} --harness {harness}" for harness in harnesses
-        ),
+        fix=f"{command('adapter materialize')} {shlex.quote(str(workspace))}"
+        + f" --harness {harnesses[0]}"
+        + " (it refreshes every harness's rules)",
     )
 
 
@@ -225,7 +238,7 @@ def _check_launcher(workspace: Path) -> Check:
             name="launcher",
             status="fail",
             detail="no ./a0 in this workspace, so every command the rules name fails",
-            fix=f"`{command('adapter materialize')}` from a framework checkout",
+            fix=f"`{command('adapter materialize')}`",
         )
     if os.name == "nt":
         if (workspace / "a0.cmd").is_file():
@@ -234,7 +247,7 @@ def _check_launcher(workspace: Path) -> Check:
             "launcher",
             "fail",
             "no a0.cmd for Windows",
-            fix=f"`{command('adapter materialize')}` from a framework checkout",
+            fix=f"`{command('adapter materialize')}`",
         )
     if not os.access(launcher, os.X_OK):
         return Check(
@@ -272,7 +285,7 @@ def _check_packages(workspace: Path) -> Check:
             name="packages",
             status="fail",
             detail=f"runtime packages missing from src/: {', '.join(missing)}",
-            fix=f"re-run `{command('adapter materialize')}` from a framework checkout",
+            fix=f"re-run `{command('adapter materialize')}`",
         )
     return Check("packages", "pass", f"{len(VENDORED_PACKAGES)} runtime packages present")
 
@@ -415,7 +428,7 @@ def _check_hook_round_trip(workspace: Path, interpreter: str | None) -> Check:
             name="hook round trip",
             status="fail",
             detail=detail,
-            fix=f"re-run `{command('adapter materialize')}` from a framework checkout",
+            fix=f"re-run `{command('adapter materialize')}`",
         )
     return Check("hook round trip", "pass", "probe event sequence produced a Trace")
 
@@ -522,7 +535,7 @@ def _check_version_skew(
             name="version",
             status=severity,
             detail="src/ present but src/VERSION.yaml is missing — origin unknown",
-            fix=f"`{command('adapter materialize --force')}` from a framework checkout",
+            fix=f"`{command('adapter materialize --force')}`",
         )
 
     actual = tree_hash(workspace / "src")
@@ -548,7 +561,7 @@ def _check_version_skew(
             name="version",
             status=severity,
             detail=f"workspace carries {stamp.get('agentzero_version')}, framework is {current}",
-            fix=f"`{command('adapter materialize')}` from a framework checkout",
+            fix=f"`{command('adapter materialize')}`",
         )
     return Check("version", "pass", f"{current}, unmodified")
 

@@ -27,8 +27,10 @@ from memory.graph import (
 from memory.host import ask, command, relay, reminder, warn_if_foreign_runtime
 from memory.lifecycle import (
     HotSet,
+    MemoryEntry,
     live_fact_ids,
     load_hot_set,
+    parse_entry,
     promote_episode,
     propose_episode,
     propose_fact,
@@ -37,8 +39,8 @@ from memory.lifecycle import (
 )
 from memory.lint import DEFAULT_RECENT_RUNS, lint_workspace
 from memory.review import Pending, collect_pending, confirm, find, reject, render, resolve, retire
-from memory.runstate import hot_set_reminder, note_hot_set
-from memory.text import is_request, is_standing, supported_by
+from memory.runstate import hot_set_reminder, note_hot_set, operator_message
+from memory.text import cut_sentence, heard_for, is_request, is_standing, supported_by
 from skills import Listed, list_skills
 
 
@@ -279,8 +281,10 @@ def _remember(parsed: argparse.Namespace) -> int:
     if refusal:
         sys.stderr.write(f"remember refused: {refusal}\n")
         return 1
+    message = operator_message(parsed.workspace)
+    heard = heard_for(parsed.said, message)
     if not supported_by(parsed.sentence, parsed.said.strip()):
-        return _proposed_instead(parsed, memory_dir)
+        return _proposed_instead(parsed, memory_dir, heard)
     try:
         result = remember_fact(
             memory_dir,
@@ -290,6 +294,7 @@ def _remember(parsed: argparse.Namespace) -> int:
             tags=parsed.tag,
             source_run=parsed.source_run,
             said=parsed.said,
+            heard=heard,
         )
     except ValueError as exc:
         sys.stderr.write(f"remember failed: {exc}\n")
@@ -323,10 +328,60 @@ def _remember(parsed: argparse.Namespace) -> int:
             + command(f"memory forget fact:{result.entry.id}")
             + "\n"
         )
+    sys.stdout.write(_cut_note(parsed.said, message, result.entry))
     if is_standing(parsed.said):
         sys.stdout.write(_RECURRING)
+    for waiting in _proposals_under_key(memory_dir, result.entry.fact_key):
+        sys.stdout.write(
+            f"  a proposal under the same key is waiting: {waiting.id} — {waiting.rule}; "
+            "confirming it replaces what you just recorded\n"
+        )
+        sys.stdout.write(ask(waiting.rule, f"fact:{waiting.id}"))
     sys.stdout.write(reminder(hot_set_reminder(parsed.workspace)))
     return 0
+
+
+def _cut_note(said: str, message: str | None, entry: MemoryEntry) -> str:
+    """A → line when --said keeps only part of one of the operator's sentences (#95).
+
+    "我看不过来" was recorded from a sentence that began "你不要一次过给我太多内容"; the
+    instruction was lost and nothing could tell. The Fact is kept; the agent is told the
+    whole sentence.
+    """
+    sentence = cut_sentence(said, message)
+    if sentence is None:
+        return ""
+    then = (
+        "the same --fact-key replaces this one"
+        if entry.fact_key
+        else "then " + command(f"memory forget fact:{entry.id}")
+    )
+    return (
+        f'→ --said keeps only part of the operator\'s sentence "{sentence}": record what they '
+        f"said — run remember again with the whole sentence as --said ({then})\n"
+    )
+
+
+def _proposals_under_key(memory_dir: Path, fact_key: str | None) -> list[MemoryEntry]:
+    """Proposed Facts sharing a key: what the operator was never asked about (SETTLED #94).
+
+    Turned into a proposal, "每次讲清一个等号或变换及其依据" was never asked about:
+    18 seconds later the agent recorded the operator's words themselves, "以后也可以按照这种
+    颗粒度介绍", which says nothing once the conversation is gone.
+    """
+    if not fact_key:
+        return []
+    found: list[MemoryEntry] = []
+    for path in sorted(memory_dir.glob("*.yaml")):
+        if path.name == "graph.yaml":
+            continue
+        try:
+            entry = parse_entry(path)
+        except (OSError, ValueError):
+            continue
+        if entry.status == "proposed" and entry.fact_key == fact_key:
+            found.append(entry)
+    return found
 
 
 _RECURRING = (
@@ -361,7 +416,7 @@ def _not_the_operators_word(sentence: str, said: str) -> str | None:
     return None
 
 
-def _proposed_instead(parsed: argparse.Namespace, memory_dir: Path) -> int:
+def _proposed_instead(parsed: argparse.Namespace, memory_dir: Path, heard: str | None) -> int:
     """A sentence that says more than the operator's words waits for them, as a proposal.
 
     Refused, it was rewritten until it passed: "Lesson 0 paused at reshape; start there
@@ -379,6 +434,7 @@ def _proposed_instead(parsed: argparse.Namespace, memory_dir: Path) -> int:
             tags=parsed.tag,
             source_run=parsed.source_run,
             said=parsed.said,
+            heard=heard,
         )
     except ValueError as exc:
         sys.stderr.write(f"remember failed: {exc}\n")

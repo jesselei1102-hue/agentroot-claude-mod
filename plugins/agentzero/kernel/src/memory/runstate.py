@@ -13,6 +13,7 @@ and lint nominated every active Fact for retirement.
 
 from __future__ import annotations
 
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -88,6 +89,36 @@ def hot_set_fact_ids(memory_dir: Path, *, at: datetime) -> tuple[str, ...]:
 _REMINDED = Path("traces") / ".reminded"
 """One file per session asked, so one session's reminder does not silence another's."""
 
+_LOCK = ".lock"
+_STALE_LOCK = timedelta(minutes=1)
+"""A lock older than this was left by a hook that died; a live one holds it for milliseconds."""
+
+
+def _claim(lock: Path) -> Path | None:
+    """Take the session's lock, or None when another hook process holds it.
+
+    Cursor runs a project's Claude Code hooks beside its own, so two hook processes
+    answer the same prompt at once; both read "not asked yet" and Cursor joined their
+    two reminders into one message. Never raises: on a folder it cannot write, the
+    reminder goes out unguarded rather than not at all.
+    """
+    for _ in range(2):
+        try:
+            lock.parent.mkdir(parents=True, exist_ok=True)
+            os.close(os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
+            return lock
+        except FileExistsError:
+            try:
+                age = datetime.now().timestamp() - lock.stat().st_mtime
+            except OSError:
+                continue  # released between the two calls; try once more
+            if age < _STALE_LOCK.total_seconds():
+                return None
+            lock.unlink(missing_ok=True)
+        except OSError:
+            return lock
+    return None
+
 
 def prompt_reminder(
     workspace: Path, *, session: str | None = None, now: datetime | None = None
@@ -107,25 +138,70 @@ def prompt_reminder(
         return None
     folder = workspace / "memory" / _REMINDED
     path = folder / slug(session or "workspace")
+    lock = _claim(path.with_name(path.name + _LOCK))
+    if lock is None:
+        return None  # another hook for this same prompt is answering it
     try:
-        last = _when(path.read_text(encoding="utf-8").strip())
-    except OSError:
-        last = None
-    if last is not None and clock - last <= _FRESH:
-        return None
-    try:
-        folder.mkdir(parents=True, exist_ok=True)
-        path.write_text(clock.isoformat(timespec="seconds"), encoding="utf-8")
-        for other in folder.iterdir():
-            asked = _when(other.read_text(encoding="utf-8").strip())
-            if asked is not None and clock - asked > _FRESH * 4:
-                other.unlink()
-    except OSError:
-        pass
+        try:
+            last = _when(path.read_text(encoding="utf-8").strip())
+        except OSError:
+            last = None
+        if last is not None and clock - last <= _FRESH:
+            return None
+        try:
+            path.write_text(clock.isoformat(timespec="seconds"), encoding="utf-8")
+            for other in folder.iterdir():
+                if other.name.endswith(_LOCK):
+                    continue
+                asked = _when(other.read_text(encoding="utf-8").strip())
+                if asked is not None and clock - asked > _FRESH * 4:
+                    other.unlink()
+        except OSError:
+            pass
+    finally:
+        lock.unlink(missing_ok=True)
     return (
         "AgentZero: no hot set was loaded in the last six hours, so this project's Memory "
         f"may be out of view. Before you answer, run: {command(_LOAD)}"
     )
+
+
+def operator_message(workspace: Path, *, now: datetime | None = None) -> str | None:
+    """What the operator typed in the turn now running, as the prompt hook staged it.
+
+    The newest prompt line under `memory/traces/.staging/` within six hours, cleaned of
+    the app's UI state. No harness tells a command its turn, so with two sessions
+    prompting in the same seconds this can be the other one's (SETTLED #95).
+    """
+    staging = workspace / "memory" / "traces" / ".staging"
+    if not staging.is_dir():
+        return None
+    clock = (now or datetime.now().astimezone()).timestamp()
+    newest: tuple[float, str] | None = None
+    for path in staging.glob("*.jsonl"):
+        try:
+            lines = path.read_text(encoding="utf-8").splitlines()
+        except OSError:
+            continue
+        for line in lines:
+            try:
+                record = yaml.safe_load(line)
+            except yaml.YAMLError:
+                continue
+            if not isinstance(record, dict):
+                continue
+            if record.get("hook_event_name") != "beforeSubmitPrompt":
+                continue
+            at = record.get("at")
+            if not isinstance(at, int | float) or clock - at > _FRESH.total_seconds():
+                continue
+            if newest is None or at > newest[0]:
+                newest = (float(at), str(record.get("prompt") or ""))
+    if newest is None:
+        return None
+    from traces.normalize import task_as_asked
+
+    return task_as_asked(newest[1]) or None
 
 
 def _read(path: Path) -> dict[str, Any] | None:

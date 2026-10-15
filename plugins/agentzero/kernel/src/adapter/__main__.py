@@ -1,4 +1,7 @@
-"""python -m adapter init DEST | materialize [DIR] | preflight [DIR] | sync-template"""
+"""agentroot init DEST | materialize [DIR] | preflight [DIR] | sync-template
+
+Installed, the command is `agentroot`; in a checkout, `PYTHONPATH=src python -m adapter`.
+"""
 
 from __future__ import annotations
 
@@ -9,8 +12,9 @@ from pathlib import Path
 from adapter.claude import materialize_claude
 from adapter.codex import materialize_codex
 from adapter.cursor import materialize_cursor
+from adapter.framework import FRAMEWORK_ROOT
 from adapter.init import init_workspace
-from adapter.preflight import run_preflight
+from adapter.preflight import INSTRUCTION_FILES, run_preflight
 from adapter.vendor import (
     apply_conventions,
     apply_upgrade,
@@ -19,11 +23,9 @@ from adapter.vendor import (
     sync_template,
 )
 
-FRAMEWORK_ROOT = Path(__file__).resolve().parents[2]
-
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="python -m adapter")
+    parser = argparse.ArgumentParser(prog="agentroot")
     sub = parser.add_subparsers(dest="command", required=True)
 
     init_p = sub.add_parser("init", help="copy the portable template and materialize harness files")
@@ -71,8 +73,12 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "init":
+        # Checked here, not at the first agent run: the workspace's hooks use this
+        # machine's Python, which an installed `agentroot` does not bring PyYAML to.
         init_workspace(args.dest, harness=args.harness)
-        return 0
+        report = run_preflight(args.dest.resolve(), framework_root=FRAMEWORK_ROOT)
+        sys.stdout.write(report.render())
+        return 1 if report.failed else 0
 
     if args.command == "preflight":
         report = run_preflight(
@@ -92,9 +98,26 @@ def main(argv: list[str] | None = None) -> int:
         materialize_codex(workspace)
     if args.harness in {"claude", "all"}:
         materialize_claude(workspace)
+    _refresh_instructions(workspace)
     report = run_preflight(workspace, framework_root=FRAMEWORK_ROOT, strict=args.strict)
     sys.stdout.write(report.render())
     return 1 if report.failed else 0
+
+
+def _refresh_instructions(workspace: Path) -> None:
+    """Rewrite every harness rules file already here, not only the harness named.
+
+    A workspace wired for Codex and Cursor, upgraded with `--harness codex`, kept the old
+    rules in Cursor's file until someone ran materialize for Cursor too.
+    """
+    system_path = workspace / "System.md"
+    if not system_path.is_file():
+        return
+    system = system_path.read_text(encoding="utf-8")
+    for name, _, build in INSTRUCTION_FILES:
+        path = workspace / name
+        if path.is_file():
+            path.write_text(build(system), encoding="utf-8")
 
 
 def _upgrade_runtime(workspace: Path, *, force: bool) -> bool:
@@ -139,6 +162,16 @@ def _upgrade_conventions(workspace: Path, *, force: bool) -> bool:
     if written:
         sys.stdout.write(f"framework files: {', '.join(written)}\n")
     return True
+
+
+def legacy_main() -> int:
+    """`agentzero`, the command's old name: still runs, and says to use `agentroot`.
+
+    A workspace stood before the rename prints `agentzero …` in its fix hints until a
+    `materialize` refreshes its runtime, so the old name must not stop working at once.
+    """
+    sys.stderr.write("note: `agentzero` is now `agentroot`; the old name will be removed.\n")
+    return main()
 
 
 if __name__ == "__main__":

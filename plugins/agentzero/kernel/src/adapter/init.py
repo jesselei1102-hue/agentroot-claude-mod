@@ -8,10 +8,10 @@ from pathlib import Path
 from adapter.claude import materialize_claude
 from adapter.codex import materialize_codex
 from adapter.cursor import materialize_cursor
-from adapter.vendor import write_stamp
+from adapter.framework import FRAMEWORK_ROOT
+from adapter.vendor import mark_launchers_executable, write_stamp
 
-_REPO = Path(__file__).resolve().parents[2]
-_TEMPLATE = _REPO / "template"
+_TEMPLATE = FRAMEWORK_ROOT / "template"
 _MATERIALIZERS = {
     "cursor": materialize_cursor,
     "codex": materialize_codex,
@@ -51,5 +51,6 @@ def init_workspace(dest: Path, *, template: Path | None = None, harness: str = "
     # this particular copy has to be recorded here.
     if (dest / "src").is_dir():
         write_stamp(dest, framework_root=source.parent)
+    mark_launchers_executable(dest)
 
     _MATERIALIZERS[harness](dest)
