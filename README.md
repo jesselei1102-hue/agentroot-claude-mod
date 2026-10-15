@@ -10,7 +10,7 @@
 
 Think of Claude as a very capable colleague who forgets everything each time you start a new conversation.
 
-[AgentRoot](https://github.com/jesselei1102-hue/agentzero) (formerly AgentZero) gives that colleague a **notebook** for the rules of your project, one sentence each. For example: "Use pnpm in this project, never npm."
+AgentRoot gives that colleague a **notebook** for the rules of your project, one sentence each. For example: "Use pnpm in this project, never npm."
 
 A notebook alone leaves three problems. This plugin fixes them:
 
