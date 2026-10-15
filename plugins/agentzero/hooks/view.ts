@@ -41,7 +41,7 @@ export function age(now: number, iso: string | null): string {
 // The one light line under a Fact: who said it, how old it is, and the scope when it is not the
 // project (the usual case, so naming it on every row was noise).
 export function metaLine(fact: Fact, now: number): string {
-  const parts = [fact.said !== null ? 'Your words' : 'Inferred']
+  const parts = [fact.said !== null ? 'Your words' : "Claude's wording"]
   const old = age(now, fact.createdAt)
   if (old !== '—') parts.push(old)
   if (fact.scope !== 'project') parts.push(fact.scope === 'task' ? 'this task' : fact.scope)
@@ -51,7 +51,7 @@ export function metaLine(fact: Fact, now: number): string {
 // What a row shows on hover: the words whole, then the older sentence it replaced.
 export function factDetail(row: MemoryRow): string[] {
   const f = row.fact
-  const lines = [f.said !== null ? `“${f.said}”` : 'Inferred by the assistant, kept by you']
+  const lines = [f.said !== null ? `“${f.said}”` : "Claude's wording, kept by you"]
   if (f.replaces !== null) lines.push(`Replaced “${f.replaces}”`)
   return lines
 }

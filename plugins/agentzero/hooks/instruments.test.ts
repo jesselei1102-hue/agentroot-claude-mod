@@ -5,7 +5,7 @@ import {
 } from './instruments'
 
 const HEAD: MemoryHeaderData = {
-  loaded: 3, active: 6, yours: 5, waiting: 2, newest: '1h',
+  loaded: 3, active: 6, waiting: 2, newest: '1h',
   hotSet: { text: 'today at 14:02', failed: false },
   dots: [{ days: 0.1, loaded: true, title: 'a < b & "c"' }, { days: 40, loaded: false, title: 'old' }],
 }
@@ -57,7 +57,7 @@ test('every drawing fills the pane width, scales without stretching, and has bot
 
 test('memoryHeader: the figure, its gauge, the tiles and the timeline', () => {
   const { svg } = memoryHeader(HEAD, 700)
-  for (const s of ['MEMORY IN THIS CONVERSATION', '>3<', 'of 6 loaded', 'Hot set loaded today at 14:02', 'YOUR WORDS', 'WAITING', 'NEWEST', '1h', 'Today', '30 days'])
+  for (const s of ['MEMORY IN THIS CONVERSATION', '>3<', 'of 6 memories in use', 'Hot set loaded today at 14:02', 'TO REVIEW', 'NEWEST', '1h', 'Today', '30 days'])
     expect(svg).toContain(s)
   expect(svg.match(/class="cell on"/g)!.length).toBe(3)
   expect(svg.match(/class="cell"/g)!.length).toBe(3)
@@ -70,7 +70,7 @@ test('memoryHeader: a failed hot set is said in red; none yet is said plainly', 
 })
 
 test('memoryHeader with nothing active: zero, no cells lit, no NaN', () => {
-  const { svg } = memoryHeader({ ...HEAD, loaded: 0, active: 0, yours: 0, waiting: 0, newest: null, dots: [] }, 240)
+  const { svg } = memoryHeader({ ...HEAD, loaded: 0, active: 0, waiting: 0, newest: null, dots: [] }, 240)
   expect(svg).toContain('>0<')
   expect(svg).not.toContain('class="cell on"')
   noNaN(svg)
@@ -95,7 +95,7 @@ test('factCard: rail, sentence, source and age; hovered shows the words', () => 
 })
 
 test('factCard states: inferred, updated, task, forgotten, failed, cited', () => {
-  expect(factCard({ ...CARD, yours: false, loaded: false }, 700, false).svg).toContain('Inferred')
+  expect(factCard({ ...CARD, yours: false, loaded: false }, 700, false).svg).toContain('Claude&apos;s wording')
   expect(factCard({ ...CARD, loaded: false }, 700, false).svg).toContain('class="rail"')
   expect(factCard({ ...CARD, updated: true }, 700, false).svg).toContain('Updated')
   expect(factCard({ ...CARD, task: true }, 700, false).svg).toContain('this task')
@@ -118,21 +118,21 @@ test('itemCard leaves room at the right for Keep and Reject', () => {
 
 // Scaled to its slot, the band came out larger than its buttons and cut "context 41%" (operator, 2026-10-15).
 test('bandSvg is drawn at its own width, 1:1, so nothing is scaled or cut', () => {
-  const b = bandSvg({ loaded: 3, active: 6, yours: 5, waiting: 2, context: 41, failed: null }, 2000)
+  const b = bandSvg({ loaded: 3, active: 6, waiting: 2, context: 41, failed: null }, 2000)
   expect(b.svg).toContain(`width="${b.width}" height="28" viewBox="0 0 ${b.width} 28"`)
   expect(b.svg).not.toContain('width="100%"')
   expect(b.width > 300 && b.width < 700).toBe(true)
-  const narrow = bandSvg({ loaded: 3, active: 6, yours: 5, waiting: 2, context: 41, failed: null }, 380)
+  const narrow = bandSvg({ loaded: 3, active: 6, waiting: 2, context: 41, failed: null }, 380)
   expect(narrow.width <= 380).toBe(true)
   expect(narrow.svg).not.toContain('context')
 })
 
 test('bandSvg: brand, figures, context; a failed hot set in red', () => {
-  const ok = bandSvg({ loaded: 3, active: 6, yours: 5, waiting: 2, context: 41, failed: null }, 2000).svg
-  for (const s of ['AgentZero', '3/6 loaded', '5/6 yours', '2 waiting', '41%']) expect(ok).toContain(s)
-  const bad = bandSvg({ loaded: 3, active: 6, yours: 5, waiting: 0, context: 85, failed: 'exit 1' }, 2000).svg
+  const ok = bandSvg({ loaded: 3, active: 6, waiting: 2, context: 41, failed: null }, 2000).svg
+  for (const s of ['AgentZero', 'Using 3 of 6 memories', '2 to review', '41%']) expect(ok).toContain(s)
+  const bad = bandSvg({ loaded: 3, active: 6, waiting: 0, context: 85, failed: 'exit 1' }, 2000).svg
   expect(bad).toContain('hot set not loaded (exit 1)')
-  expect(bad).not.toContain('waiting')
+  expect(bad).not.toContain('to review')
 })
 
 test('textGauge', () => {

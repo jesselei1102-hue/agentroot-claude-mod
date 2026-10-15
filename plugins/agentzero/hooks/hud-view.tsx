@@ -117,7 +117,7 @@ function factRow(els: Els, r: MemoryRow, act: MemoryActions, ctx: ViewCtx) {
   )
 }
 
-export type MemoryFigures = { loaded: number; active: number; yours: number; waiting: number; dots: Dot[]; newest: string | null }
+export type MemoryFigures = { loaded: number; active: number; waiting: number; dots: Dot[]; newest: string | null }
 
 export function memoryFigures(v: MemoryView, now: number): MemoryFigures {
   const dated = v.facts.filter(f => f.createdAt !== null && !Number.isNaN(Date.parse(f.createdAt)))
@@ -125,7 +125,6 @@ export function memoryFigures(v: MemoryView, now: number): MemoryFigures {
   return {
     loaded: v.facts.filter(f => f.inHotSet).length,
     active: v.active,
-    yours: v.facts.filter(f => f.said !== null).length,
     waiting: v.waiting,
     dots: dated.map(f => ({ days: (now - Date.parse(f.createdAt!)) / DAY, loaded: f.inHotSet, title: f.sentence })),
     newest: newest !== null ? age(now, new Date(newest).toISOString()) : null,
@@ -134,7 +133,7 @@ export function memoryFigures(v: MemoryView, now: number): MemoryFigures {
 
 function memoryGauges(els: Els, v: MemoryView, ctx: ViewCtx) {
   const f = memoryFigures(v, ctx.now)
-  return <els.Text dimColor={true}>{`LOADED ${textGauge(f.loaded, f.active)} ${f.loaded}/${f.active}   YOURS ${textGauge(f.yours, f.active)} ${f.yours}/${f.active}   WAITING ${f.waiting}`}</els.Text>
+  return <els.Text dimColor={true}>{`IN USE ${textGauge(f.loaded, f.active)} ${f.loaded}/${f.active}   TO REVIEW ${f.waiting}`}</els.Text>
 }
 
 // ---- desktop: drawn whole ----
@@ -193,10 +192,10 @@ function drawnFactRow(els: Els, r: MemoryRow, act: MemoryActions, ctx: ViewCtx) 
   const plain = factCard(data, w, false)
   return (
     <Box key={`az-row-${id}`} flexDirection="column">
-      <Svg source={plain.svg} alt={`${r.fact.sentence}. ${data.yours ? 'Your words' : 'Inferred'}`} />
+      <Svg source={plain.svg} alt={`${r.fact.sentence}. ${data.yours ? 'Your words' : "Claude's wording"}`} />
       {r.state === 'active' && (
         <Box position="absolute" top={0} left={0} right={0} display="none" hover={{ display: 'flex' }} flexDirection="column">
-          <Svg source={factCard(data, w, true).svg} alt={data.quote !== null ? `Your words: ${data.quote}` : 'Inferred by the assistant'} />
+          <Svg source={factCard(data, w, true).svg} alt={data.quote !== null ? `Your words: ${data.quote}` : "Claude's wording, kept by you"} />
           {r.actionable && button(`az-forget-${id}`, 'Forget', 'error', () => act.forget(r.fact))}
         </Box>
       )}
@@ -219,9 +218,9 @@ function drawnMemoryPane(els: Els, v: MemoryView, act: MemoryActions, ctx: ViewC
     ]
   return (
     <Box flexDirection="column">
-      <Svg source={head.svg} alt={`${f.loaded} of ${f.active} loaded, ${f.yours} in your words, ${f.waiting} waiting`} />
-      {group('Loaded now', v.rows.filter(r => r.state !== 'forgotten' && r.fact.inHotSet))}
-      {group('Not loaded', v.rows.filter(r => r.state !== 'forgotten' && !r.fact.inHotSet))}
+      <Svg source={head.svg} alt={`Using ${f.loaded} of ${f.active} memories, ${f.waiting} to review`} />
+      {group('In use now', v.rows.filter(r => r.state !== 'forgotten' && r.fact.inHotSet))}
+      {group('Saved, not in use', v.rows.filter(r => r.state !== 'forgotten' && !r.fact.inHotSet))}
       {group('Forgotten', v.rows.filter(r => r.state === 'forgotten'))}
       {v.hidden > 0 && <Text dimColor={true}>{`+${v.hidden} older Facts not shown`}</Text>}
     </Box>
@@ -239,8 +238,8 @@ export function memoryPane(els: Els, v: MemoryView, act: MemoryActions, ctx: Vie
   return (
     <Box flexDirection="column" gap={1}>
       {memoryGauges(els, v, ctx)}
-      {group('Loaded now', hot, v.hotSet)}
-      {group('Not loaded', other)}
+      {group('In use now', hot, v.hotSet)}
+      {group('Saved, not in use', other)}
       {group('Forgotten', gone)}
       {v.hidden > 0 && <Text dimColor={true}>{`+${v.hidden} older Facts not shown`}</Text>}
     </Box>
@@ -313,8 +312,8 @@ function drawnReviewPane(els: Els, v: ReviewView, act: ReviewActions, ctx: ViewC
   const done = v.rows.filter(r => !r.actionable)
   return (
     <Box flexDirection="column">
-      <Svg source={reviewHeader({ waiting: v.open, done: v.done }, w).svg} alt={`${v.open} waiting, ${v.done} done`} />
-      {waiting.length > 0 && <Svg source={groupHeader('Waiting for you', waiting.length, w).svg} alt={`Waiting for you: ${waiting.length}`} />}
+      <Svg source={reviewHeader({ waiting: v.open, done: v.done }, w).svg} alt={`${v.open} to review, ${v.done} done`} />
+      {waiting.length > 0 && <Svg source={groupHeader('To review', waiting.length, w).svg} alt={`To review: ${waiting.length}`} />}
       {waiting.map(r => drawnItemRow(els, r, act, ctx))}
       {done.length > 0 && <Svg source={groupHeader('Done', done.length, w).svg} alt={`Done: ${done.length}`} />}
       {done.map(r => drawnItemRow(els, r, act, ctx))}
@@ -330,8 +329,8 @@ export function reviewPane(els: Els, v: ReviewView, act: ReviewActions, ctx: Vie
   const done = v.rows.filter(r => !r.actionable)
   return (
     <Box flexDirection="column" gap={1}>
-      <Text dimColor={true}>{`WAITING ${v.open}   DONE ${v.done}`}</Text>
-      {waiting.length > 0 && section(els, 'Waiting for you', waiting.length)}
+      <Text dimColor={true}>{`TO REVIEW ${v.open}   DONE ${v.done}`}</Text>
+      {waiting.length > 0 && section(els, 'To review', waiting.length)}
       {waiting.map(r => reviewRow(els, r, act, ctx))}
       {done.length > 0 && section(els, 'Done', done.length)}
       {done.map(r => reviewRow(els, r, act, ctx))}

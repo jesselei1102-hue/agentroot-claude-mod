@@ -13,10 +13,9 @@ export const CONTEXT_WARN_PERCENT = 80
 
 function altText(snap: HudState['snapshot'], facts: Fact[] | null): string {
   if (snap === null) return 'AgentZero memory: state unknown'
-  if (facts === null) return `AgentZero memory: ${snap.active} active, ${snap.pending.length} waiting`
+  if (facts === null) return `AgentZero memory: ${snap.active} memories, ${snap.pending.length} to review`
   const loaded = facts.filter(f => f.inHotSet).length
-  const yours = facts.filter(f => f.said !== null).length
-  return `AgentZero memory: ${loaded} of ${facts.length} loaded, ${yours} in your words, ${snap.pending.length} waiting`
+  return `AgentZero memory: using ${loaded} of ${facts.length} memories, ${snap.pending.length} to review`
 }
 
 export function bandModel(hud: HudState, hotSetError: string | null, contextPercent: number | undefined, now: number): BandModel {
@@ -29,14 +28,13 @@ export function bandModel(hud: HudState, hotSetError: string | null, contextPerc
     pills.push({ text: hud.error !== null ? 'memory unreadable' : 'reading memory…', tone: 'grey' })
     if (failed !== null) pills.push(failed)
   } else if (facts === null) {
-    pills.push({ text: `${snap.active} active`, tone: 'ink' })
+    pills.push({ text: `${snap.active} memories`, tone: 'ink' })
     if (failed !== null) pills.push(failed)
   } else {
     const loaded = facts.filter(f => f.inHotSet).length
-    pills.push(failed ?? { text: `● ${loaded}/${facts.length} loaded`, tone: 'blue' })
-    pills.push({ text: `❝ ${facts.filter(f => f.said !== null).length}/${facts.length} yours`, tone: 'ink' })
+    pills.push(failed ?? { text: `● Using ${loaded} of ${facts.length} memories`, tone: 'blue' })
   }
-  if (snap !== null && snap.pending.length > 0) pills.push({ text: `◉ ${snap.pending.length} waiting`, tone: 'amber' })
+  if (snap !== null && snap.pending.length > 0) pills.push({ text: `◉ ${snap.pending.length} to review`, tone: 'amber' })
 
   let ring: Ring | null = null
   if (contextPercent !== undefined) {
@@ -54,7 +52,6 @@ export function bandModel(hud: HudState, hotSetError: string | null, contextPerc
       ? {
           loaded: facts.filter(f => f.inHotSet).length,
           active: facts.length,
-          yours: facts.filter(f => f.said !== null).length,
           waiting: snap.pending.length,
           context: ring?.percent ?? null,
           failed: hotSetError,

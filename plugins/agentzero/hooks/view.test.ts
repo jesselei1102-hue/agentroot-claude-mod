@@ -27,7 +27,7 @@ test('age', () => {
 
 test('metaLine: source, age, and scope only when not the project', () => {
   expect(metaLine(fact({ said: '周五别部署', createdAt: '2026-10-13T12:00:00Z' }), NOW)).toBe('Your words · 2d')
-  expect(metaLine(fact({ said: null, createdAt: '2026-10-07T12:00:00Z' }), NOW)).toBe('Inferred · 8d')
+  expect(metaLine(fact({ said: null, createdAt: '2026-10-07T12:00:00Z' }), NOW)).toBe("Claude's wording · 8d")
   expect(metaLine(fact({ createdAt: '2026-10-01T12:00:00Z', scope: 'task' }), NOW)).toBe('Your words · 2w · this task')
   expect(metaLine(fact({ createdAt: null }), NOW)).toBe('Your words')
 })
@@ -35,7 +35,7 @@ test('metaLine: source, age, and scope only when not the project', () => {
 test('factDetail shows the whole words and what it replaced', () => {
   expect(factDetail(row(fact({ said: 'x'.repeat(80), replaces: 'Stand-up at 9.' }))))
     .toEqual([`“${'x'.repeat(80)}”`, 'Replaced “Stand-up at 9.”'])
-  expect(factDetail(row(fact({ said: null })))).toEqual(['Inferred by the assistant, kept by you'])
+  expect(factDetail(row(fact({ said: null })))).toEqual(["Claude's wording, kept by you"])
 })
 
 

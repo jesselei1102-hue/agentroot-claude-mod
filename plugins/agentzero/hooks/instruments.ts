@@ -104,7 +104,6 @@ export type Note = { text: string; failed: boolean }
 export type MemoryHeaderData = {
   loaded: number
   active: number
-  yours: number
   waiting: number
   newest: string | null
   hotSet: Note | null
@@ -157,30 +156,24 @@ function timeline(w: number, top: number, dots: Dot[]): string {
 export function memoryHeader(f: MemoryHeaderData, w: number): Drawing {
   const big = String(f.loaded)
   const bigW = textWidth(big, 40) * 1.05
-  const rest = `of ${f.active} loaded`
+  const rest = `of ${f.active} memories in use`
   const sub = f.hotSet === null ? 'No hot set loaded yet' : f.hotSet.failed ? `Hot set ${f.hotSet.text}` : `Hot set loaded ${f.hotSet.text}`
   const heroRight = bigW + 8 + textWidth(rest, 15)
   const top = 104
-  const tileW = (w - 16) / 3
-  const share = f.active > 0 ? f.yours / f.active : 0
-  const yours = text(12, top + 44, String(f.yours), { cls: 'ink', size: 20, weight: 650 }) +
-    text(12 + textWidth(String(f.yours), 20) + 6, top + 44, `/ ${f.active}`, { cls: 'mute', size: 12 }) +
-    `<rect x="12" y="${top + 50}" width="${n2(tileW - 24)}" height="4" rx="2" class="hair"/>` +
-    (share > 0 ? `<rect x="12" y="${top + 50}" width="${n2((tileW - 24) * share)}" height="4" rx="2" class="ink2"/>` : '')
-  const waitX = tileW + 8
+  const tileW = (w - 8) / 2
+  const waitX = 0
   const waiting = f.waiting > 0
     ? `<circle cx="${n2(waitX + 18)}" cy="${top + 37}" r="8" class="amber-t"/><circle cx="${n2(waitX + 18)}" cy="${top + 37}" r="4" class="amber"/>` +
       text(waitX + 32, top + 44, String(f.waiting), { cls: 'amber', size: 20, weight: 650 })
     : text(waitX + 12, top + 44, '0', { cls: 'mute', size: 20, weight: 650 })
-  const newX = 2 * (tileW + 8)
+  const newX = tileW + 8
   return drawing(w, 230,
     text(0, 14, 'MEMORY IN THIS CONVERSATION', { cls: 'over', size: 10.5 }) +
     text(0, 62, big, { cls: 'ink', size: 40, weight: 650, extra: ' letter-spacing="-0.8"' }) +
     text(bigW + 8, 62, rest, { cls: 'mute', size: 15, weight: 500 }) +
     text(0, 84, sub, { cls: f.hotSet?.failed === true ? 'red' : 'mute', size: 12.5 }) +
     cells(f.loaded, f.active, w, 62, Math.max(0, w - heroRight - 20)) +
-    tile(0, top, tileW, 'YOUR WORDS', yours) +
-    tile(waitX, top, tileW, 'WAITING', waiting) +
+    tile(waitX, top, tileW, 'TO REVIEW', waiting) +
     tile(newX, top, tileW, 'NEWEST', text(newX + 12, top + 44, f.newest ?? '—', { cls: 'ink', size: 20, weight: 650 })) +
     timeline(w, 176, f.dots))
 }
@@ -226,7 +219,7 @@ export function factCard(c: FactCardData, w: number, hovered: boolean): Drawing 
   } else if (gone) {
     line = text(textX, 45, 'Forgotten · Restore brings it back', { cls: 'mute', size: 12 })
   } else if (hovered) {
-    const words = c.quote !== null ? `“${c.quote}”` : 'Inferred by the assistant, kept by you'
+    const words = c.quote !== null ? `“${c.quote}”` : "Claude's wording, kept by you"
     const said = c.replaces !== null ? `${words} · replaced “${c.replaces}”` : words
     line = text(textX, 45, fitText(said, 12, room), { cls: 'ink2', size: 12 })
   } else {
@@ -238,7 +231,7 @@ export function factCard(c: FactCardData, w: number, hovered: boolean): Drawing 
       parts += text(x, 45, 'Your words', { cls: 'mute', size: 12 })
       x += textWidth('Your words', 12) + 4
     } else {
-      const p = pill(x, 45, 'Inferred', 'tint', 'mute')
+      const p = pill(x, 45, "Claude's wording", 'tint', 'mute')
       parts += p.svg
       x += p.w + 6
     }
@@ -263,9 +256,9 @@ export function reviewHeader(f: { waiting: number; done: number }, w: number): D
   const big = String(f.waiting)
   const bigW = textWidth(big, 40) * 1.05
   return drawing(w, 96,
-    text(0, 14, 'WAITING FOR YOUR YES', { cls: 'over', size: 10.5 }) +
+    text(0, 14, 'REVIEW', { cls: 'over', size: 10.5 }) +
     text(0, 62, big, { cls: f.waiting > 0 ? 'amber' : 'ink', size: 40, weight: 650, extra: ' letter-spacing="-0.8"' }) +
-    text(bigW + 8, 62, f.waiting === 1 ? 'item' : 'items', { cls: 'mute', size: 15, weight: 500 }) +
+    text(bigW + 8, 62, 'to review', { cls: 'mute', size: 15, weight: 500 }) +
     text(0, 84, f.done > 0 ? `${f.done} decided in this pane` : 'Keep what is right; reject the rest', { cls: f.done > 0 ? 'green' : 'mute', size: 12.5 }))
 }
 
@@ -289,7 +282,7 @@ export function itemCard(c: ItemCardData, w: number): Drawing {
     line)
 }
 
-export type BandData = { loaded: number; active: number; yours: number; waiting: number; context: number | null; failed: string | null }
+export type BandData = { loaded: number; active: number; waiting: number; context: number | null; failed: string | null }
 
 // The band is drawn at its own width and 1:1 (no scaling to a slot), so it keeps the size of the
 // buttons beside it and is never cut; the context goes only when it fits within maxW.
@@ -305,15 +298,12 @@ export function bandSvg(b: BandData, maxW: number): Drawing {
     s += `<circle cx="${n2(x + 4)}" cy="${y - 4.5}" r="4" class="red"/>` + text(x + 13, y, msg, { cls: 'red', size: 13 })
     x += 13 + textWidth(msg, 13) + 16
   } else {
-    const msg = `${b.loaded}/${b.active} loaded`
+    const msg = `Using ${b.loaded} of ${b.active} memories`
     s += `<circle cx="${n2(x + 4)}" cy="${y - 4.5}" r="4" class="blue"/>` + text(x + 13, y, msg, { cls: 'blue', size: 13, weight: 500 })
     x += 13 + textWidth(msg, 13) + 16
   }
-  const yours = `${b.yours}/${b.active} yours`
-  s += QUOTE(x, y - 10, 'mute') + text(x + 14, y, yours, { cls: 'ink2', size: 13 })
-  x += 14 + textWidth(yours, 13) + 16
   if (b.waiting > 0) {
-    const msg = `${b.waiting} waiting`
+    const msg = `${b.waiting} to review`
     s += `<circle cx="${n2(x + 5)}" cy="${y - 4.5}" r="7" class="amber-t"/><circle cx="${n2(x + 5)}" cy="${y - 4.5}" r="3.5" class="amber"/>` +
       text(x + 15, y, msg, { cls: 'amber', size: 13, weight: 500 })
     x += 15 + textWidth(msg, 13) + 16

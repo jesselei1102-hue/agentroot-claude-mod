@@ -49,7 +49,7 @@ test('mobile and terminal show the details plainly', () => {
 test('the figures count the snapshot Facts, not the displayed rows', () => {
   const failed: MemoryRow = { ...row(fact('fact:gone', true, 'y'), 'failed'), message: 'timed out', actionable: false }
   const f = memoryFigures(view([row(A), row(B), failed], [A, B]), Date.parse('2026-10-15T12:00:00Z'))
-  expect([f.loaded, f.yours, f.active, f.dots.length]).toEqual([1, 1, 2, 2])
+  expect([f.loaded, f.active, f.dots.length]).toEqual([1, 2, 2])
 })
 
 // Forget reads as a destructive action (operator, 2026-10-15: "enhance the forget button"): a red
