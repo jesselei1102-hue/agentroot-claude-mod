@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="660" height="778" viewBox="0 0 660 778"><rect x="0.5" y="0.5" width="659" height="777" rx="14" class="bg hair-s" stroke-width="1"/><svg x="20" y="20" width="620" height="230" viewBox="0 0 620 230"><style>
+text{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, sans-serif;font-variant-numeric:tabular-nums}
+.ink{fill:#16171a}.ink2{fill:#3a3c42}.mute{fill:#8a8d95}.faint{fill:#c4c6cc}
+.over{fill:#8a8d95;font-weight:600;letter-spacing:.09em}
+.hair{fill:#eceef1}.hair-s{stroke:#eceef1}.faint-s{stroke:#c4c6cc}.tint{fill:#f6f7f9}.bg{fill:#ffffff}
+.blue{fill:#3366f0}.blue-s{stroke:#3366f0}.blue-t{fill:#eaf0ff}
+.amber{fill:#e09a1f}.amber-t{fill:#fff1d6}.green{fill:#1f9d61}.red{fill:#d4493b}.claude{fill:#d97757}
+.cell{fill:#eceef1}.cell.on{fill:#3366f0}
+.rail{fill:#e3e5e9}.rail.on{fill:#3366f0}.rail.amber{fill:#e09a1f}.rail.green{fill:#1f9d61}.rail.red{fill:#d4493b}
+@media (prefers-color-scheme: dark){
+.ink{fill:#f1f2f4}.ink2{fill:#c9cbd0}.mute,.over{fill:#8d9099}.faint{fill:#4a4c53}
+.hair,.cell,.rail{fill:#2e3035}.hair-s{stroke:#2e3035}.faint-s{stroke:#4a4c53}.tint{fill:#24262a}.bg{fill:#1c1d20}
+.blue,.cell.on,.rail.on{fill:#7fa2ff}.blue-s{stroke:#7fa2ff}.blue-t{fill:#23304f}
+.amber,.rail.amber{fill:#f2b34a}.amber-t{fill:#3a2f1c}.green,.rail.green{fill:#4cc98c}.red,.rail.red{fill:#f07a6e}
+}
+</style><text x="0" y="14" class="over" font-size="10.5">MEMORY IN THIS CONVERSATION</text><text x="0" y="62" class="ink" font-size="40" font-weight="650" letter-spacing="-0.8">3</text><text x="31.52" y="62" class="mute" font-size="15" font-weight="500">of 6 memories in use</text><text x="0" y="84" class="mute" font-size="12.5">Hot set loaded at 14:02</text><rect x="516" y="40" width="14" height="22" rx="4" class="cell on"/><rect x="534" y="40" width="14" height="22" rx="4" class="cell on"/><rect x="552" y="40" width="14" height="22" rx="4" class="cell on"/><rect x="570" y="40" width="14" height="22" rx="4" class="cell"/><rect x="588" y="40" width="14" height="22" rx="4" class="cell"/><rect x="606" y="40" width="14" height="22" rx="4" class="cell"/><rect x="0" y="104" width="306" height="60" rx="10" class="tint"/><text x="12" y="124" class="over" font-size="10.5">TO REVIEW</text><circle cx="18" cy="141" r="8" class="amber-t"/><circle cx="18" cy="141" r="4" class="amber"/><text x="32" y="148" class="amber" font-size="20" font-weight="650">2</text><rect x="314" y="104" width="306" height="60" rx="10" class="tint"/><text x="326" y="124" class="over" font-size="10.5">NEWEST</text><text x="326" y="148" class="ink" font-size="20" font-weight="650">5h ago</text><line x1="6" y1="198" x2="614" y2="198" class="hair-s" stroke-width="2" stroke-linecap="round"/><line x1="614" y1="195" x2="614" y2="201" class="faint-s" stroke-width="1"/><line x1="472.13" y1="195" x2="472.13" y2="201" class="faint-s" stroke-width="1"/><line x1="330.27" y1="195" x2="330.27" y2="201" class="faint-s" stroke-width="1"/><line x1="188.4" y1="195" x2="188.4" y2="201" class="faint-s" stroke-width="1"/><line x1="46.53" y1="195" x2="46.53" y2="201" class="faint-s" stroke-width="1"/><g><line x1="609.95" y1="198" x2="609.95" y2="189" class="faint-s" stroke-width="2" stroke-linecap="round"/><circle cx="609.95" cy="189" r="3" class="bg faint-s" stroke-width="1.5"/><title></title></g><g><line x1="553.2" y1="198" x2="553.2" y2="184" class="blue-s" stroke-width="2" stroke-linecap="round"/><circle cx="553.2" cy="184" r="3.5" class="blue"/><title></title></g><g><line x1="472.13" y1="198" x2="472.13" y2="184" class="blue-s" stroke-width="2" stroke-linecap="round"/><circle cx="472.13" cy="184" r="3.5" class="blue"/><title></title></g><g><line x1="330.27" y1="198" x2="330.27" y2="184" class="blue-s" stroke-width="2" stroke-linecap="round"/><circle cx="330.27" cy="184" r="3.5" class="blue"/><title></title></g><g><line x1="188.4" y1="198" x2="188.4" y2="189" class="faint-s" stroke-width="2" stroke-linecap="round"/><circle cx="188.4" cy="189" r="3" class="bg faint-s" stroke-width="1.5"/><title></title></g><g><line x1="87.07" y1="198" x2="87.07" y2="189" class="faint-s" stroke-width="2" stroke-linecap="round"/><circle cx="87.07" cy="189" r="3" class="bg faint-s" stroke-width="1.5"/><title></title></g><text x="6" y="215" class="mute" font-size="11" text-anchor="start">30 days</text><text x="188.4" y="215" class="mute" font-size="11" text-anchor="middle">3 weeks</text><text x="330.27" y="215" class="mute" font-size="11" text-anchor="middle">2</text><text x="472.13" y="215" class="mute" font-size="11" text-anchor="middle">1</text><text x="614" y="215" class="mute" font-size="11" text-anchor="end">Today</text></svg><svg x="20" y="264" width="620" height="30" viewBox="0 0 620 30"><style>
+text{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, sans-serif;font-variant-numeric:tabular-nums}
+.ink{fill:#16171a}.ink2{fill:#3a3c42}.mute{fill:#8a8d95}.faint{fill:#c4c6cc}
+.over{fill:#8a8d95;font-weight:600;letter-spacing:.09em}
+.hair{fill:#eceef1}.hair-s{stroke:#eceef1}.faint-s{stroke:#c4c6cc}.tint{fill:#f6f7f9}.bg{fill:#ffffff}
+.blue{fill:#3366f0}.blue-s{stroke:#3366f0}.blue-t{fill:#eaf0ff}
+.amber{fill:#e09a1f}.amber-t{fill:#fff1d6}.green{fill:#1f9d61}.red{fill:#d4493b}.claude{fill:#d97757}
+.cell{fill:#eceef1}.cell.on{fill:#3366f0}
+.rail{fill:#e3e5e9}.rail.on{fill:#3366f0}.rail.amber{fill:#e09a1f}.rail.green{fill:#1f9d61}.rail.red{fill:#d4493b}
+@media (prefers-color-scheme: dark){
+.ink{fill:#f1f2f4}.ink2{fill:#c9cbd0}.mute,.over{fill:#8d9099}.faint{fill:#4a4c53}
+.hair,.cell,.rail{fill:#2e3035}.hair-s{stroke:#2e3035}.faint-s{stroke:#4a4c53}.tint{fill:#24262a}.bg{fill:#1c1d20}
+.blue,.cell.on,.rail.on{fill:#7fa2ff}.blue-s{stroke:#7fa2ff}.blue-t{fill:#23304f}
+.amber,.rail.amber{fill:#f2b34a}.amber-t{fill:#3a2f1c}.green,.rail.green{fill:#4cc98c}.red,.rail.red{fill:#f07a6e}
+}
+</style><text x="0" y="21" class="over" font-size="10.5">IN USE NOW</text><rect x="74.68" y="10" width="20" height="15" rx="7.5" class="tint"/><text x="84.68" y="21" class="mute" font-size="10.5" font-weight="600" text-anchor="middle">3</text></svg><svg x="20" y="298" width="620" height="58" viewBox="0 0 620 58"><style>
+text{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, sans-serif;font-variant-numeric:tabular-nums}
+.ink{fill:#16171a}.ink2{fill:#3a3c42}.mute{fill:#8a8d95}.faint{fill:#c4c6cc}
+.over{fill:#8a8d95;font-weight:600;letter-spacing:.09em}
+.hair{fill:#eceef1}.hair-s{stroke:#eceef1}.faint-s{stroke:#c4c6cc}.tint{fill:#f6f7f9}.bg{fill:#ffffff}
+.blue{fill:#3366f0}.blue-s{stroke:#3366f0}.blue-t{fill:#eaf0ff}
+.amber{fill:#e09a1f}.amber-t{fill:#fff1d6}.green{fill:#1f9d61}.red{fill:#d4493b}.claude{fill:#d97757}
+.cell{fill:#eceef1}.cell.on{fill:#3366f0}
+.rail{fill:#e3e5e9}.rail.on{fill:#3366f0}.rail.amber{fill:#e09a1f}.rail.green{fill:#1f9d61}.rail.red{fill:#d4493b}
+@media (prefers-color-scheme: dark){
+.ink{fill:#f1f2f4}.ink2{fill:#c9cbd0}.mute,.over{fill:#8d9099}.faint{fill:#4a4c53}
+.hair,.cell,.rail{fill:#2e3035}.hair-s{stroke:#2e3035}.faint-s{stroke:#4a4c53}.tint{fill:#24262a}.bg{fill:#1c1d20}
+.blue,.cell.on,.rail.on{fill:#7fa2ff}.blue-s{stroke:#7fa2ff}.blue-t{fill:#23304f}
+.amber,.rail.amber{fill:#f2b34a}.amber-t{fill:#3a2f1c}.green,.rail.green{fill:#4cc98c}.red,.rail.red{fill:#f07a6e}
+}
+</style><rect x="2" y="10" width="3" height="38" rx="1.5" class="rail on"/><text x="17" y="26" class="ink" font-size="14" font-weight="500">Use pnpm in this project, never npm</text><path class="mute" transform="translate(17 36) scale(0.92)" d="M1 7.2C1 4.6 2.4 2.7 4.6 2l.4.9C3.7 3.5 3.1 4.4 3 5.5h1.8V10H1zm6 0C7 4.6 8.4 2.7 10.6 2l.4.9C9.7 3.5 9.1 4.4 9 5.5h1.8V10H7z"/><text x="31" y="45" class="mute" font-size="12">Your words</text><text x="103.52" y="45" class="mute" font-size="12">· 3d</text></svg><svg x="20" y="360" width="620" height="58" viewBox="0 0 620 58"><style>
+text{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, sans-serif;font-variant-numeric:tabular-nums}
+.ink{fill:#16171a}.ink2{fill:#3a3c42}.mute{fill:#8a8d95}.faint{fill:#c4c6cc}
+.over{fill:#8a8d95;font-weight:600;letter-spacing:.09em}
+.hair{fill:#eceef1}.hair-s{stroke:#eceef1}.faint-s{stroke:#c4c6cc}.tint{fill:#f6f7f9}.bg{fill:#ffffff}
+.blue{fill:#3366f0}.blue-s{stroke:#3366f0}.blue-t{fill:#eaf0ff}
+.amber{fill:#e09a1f}.amber-t{fill:#fff1d6}.green{fill:#1f9d61}.red{fill:#d4493b}.claude{fill:#d97757}
+.cell{fill:#eceef1}.cell.on{fill:#3366f0}
+.rail{fill:#e3e5e9}.rail.on{fill:#3366f0}.rail.amber{fill:#e09a1f}.rail.green{fill:#1f9d61}.rail.red{fill:#d4493b}
+@media (prefers-color-scheme: dark){
+.ink{fill:#f1f2f4}.ink2{fill:#c9cbd0}.mute,.over{fill:#8d9099}.faint{fill:#4a4c53}
+.hair,.cell,.rail{fill:#2e3035}.hair-s{stroke:#2e3035}.faint-s{stroke:#4a4c53}.tint{fill:#24262a}.bg{fill:#1c1d20}
+.blue,.cell.on,.rail.on{fill:#7fa2ff}.blue-s{stroke:#7fa2ff}.blue-t{fill:#23304f}
+.amber,.rail.amber{fill:#f2b34a}.amber-t{fill:#3a2f1c}.green,.rail.green{fill:#4cc98c}.red,.rail.red{fill:#f07a6e}
+}
+</style><rect x="0" y="0" width="620" height="58" rx="10" class="tint"/><rect x="2" y="10" width="3" height="38" rx="1.5" class="rail on"/><text x="17" y="26" class="ink" font-size="14" font-weight="500">Tests run against the staging database</text><text x="17" y="45" class="ink2" font-size="12">“Run the tests on staging, not local.” · replaced “Tests run against a local databa…</text></svg><rect x="561" y="376" width="69" height="26" rx="13" fill="none" stroke="#d4493b" stroke-width="1.5"/><text x="595.5" y="393.5" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, sans-serif" font-size="12.5" font-weight="500" text-anchor="middle" class="ink">Forget</text><svg x="20" y="422" width="620" height="58" viewBox="0 0 620 58"><style>
+text{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, sans-serif;font-variant-numeric:tabular-nums}
+.ink{fill:#16171a}.ink2{fill:#3a3c42}.mute{fill:#8a8d95}.faint{fill:#c4c6cc}
+.over{fill:#8a8d95;font-weight:600;letter-spacing:.09em}
+.hair{fill:#eceef1}.hair-s{stroke:#eceef1}.faint-s{stroke:#c4c6cc}.tint{fill:#f6f7f9}.bg{fill:#ffffff}
+.blue{fill:#3366f0}.blue-s{stroke:#3366f0}.blue-t{fill:#eaf0ff}
+.amber{fill:#e09a1f}.amber-t{fill:#fff1d6}.green{fill:#1f9d61}.red{fill:#d4493b}.claude{fill:#d97757}
+.cell{fill:#eceef1}.cell.on{fill:#3366f0}
+.rail{fill:#e3e5e9}.rail.on{fill:#3366f0}.rail.amber{fill:#e09a1f}.rail.green{fill:#1f9d61}.rail.red{fill:#d4493b}
+@media (prefers-color-scheme: dark){
+.ink{fill:#f1f2f4}.ink2{fill:#c9cbd0}.mute,.over{fill:#8d9099}.faint{fill:#4a4c53}
+.hair,.cell,.rail{fill:#2e3035}.hair-s{stroke:#2e3035}.faint-s{stroke:#4a4c53}.tint{fill:#24262a}.bg{fill:#1c1d20}
+.blue,.cell.on,.rail.on{fill:#7fa2ff}.blue-s{stroke:#7fa2ff}.blue-t{fill:#23304f}
+.amber,.rail.amber{fill:#f2b34a}.amber-t{fill:#3a2f1c}.green,.rail.green{fill:#4cc98c}.red,.rail.red{fill:#f07a6e}
+}
+</style><rect x="2" y="10" width="3" height="38" rx="1.5" class="rail on"/><text x="17" y="26" class="ink" font-size="14" font-weight="500">Keep the changelog in plain English</text><rect x="17" y="34" width="101" height="15" rx="7.5" class="tint"/><text x="67.5" y="45" class="mute" font-size="10.5" font-weight="600" text-anchor="middle">Claude&apos;s wording</text><text x="124" y="45" class="mute" font-size="12">· 2w</text></svg><svg x="20" y="494" width="620" height="30" viewBox="0 0 620 30"><style>
+text{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, sans-serif;font-variant-numeric:tabular-nums}
+.ink{fill:#16171a}.ink2{fill:#3a3c42}.mute{fill:#8a8d95}.faint{fill:#c4c6cc}
+.over{fill:#8a8d95;font-weight:600;letter-spacing:.09em}
+.hair{fill:#eceef1}.hair-s{stroke:#eceef1}.faint-s{stroke:#c4c6cc}.tint{fill:#f6f7f9}.bg{fill:#ffffff}
+.blue{fill:#3366f0}.blue-s{stroke:#3366f0}.blue-t{fill:#eaf0ff}
+.amber{fill:#e09a1f}.amber-t{fill:#fff1d6}.green{fill:#1f9d61}.red{fill:#d4493b}.claude{fill:#d97757}
+.cell{fill:#eceef1}.cell.on{fill:#3366f0}
+.rail{fill:#e3e5e9}.rail.on{fill:#3366f0}.rail.amber{fill:#e09a1f}.rail.green{fill:#1f9d61}.rail.red{fill:#d4493b}
+@media (prefers-color-scheme: dark){
+.ink{fill:#f1f2f4}.ink2{fill:#c9cbd0}.mute,.over{fill:#8d9099}.faint{fill:#4a4c53}
+.hair,.cell,.rail{fill:#2e3035}.hair-s{stroke:#2e3035}.faint-s{stroke:#4a4c53}.tint{fill:#24262a}.bg{fill:#1c1d20}
+.blue,.cell.on,.rail.on{fill:#7fa2ff}.blue-s{stroke:#7fa2ff}.blue-t{fill:#23304f}
+.amber,.rail.amber{fill:#f2b34a}.amber-t{fill:#3a2f1c}.green,.rail.green{fill:#4cc98c}.red,.rail.red{fill:#f07a6e}
+}
+</style><text x="0" y="21" class="over" font-size="10.5">SAVED, NOT IN USE</text><rect x="118.07" y="10" width="20" height="15" rx="7.5" class="tint"/><text x="128.07" y="21" class="mute" font-size="10.5" font-weight="600" text-anchor="middle">2</text></svg><svg x="20" y="528" width="620" height="58" viewBox="0 0 620 58"><style>
+text{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, sans-serif;font-variant-numeric:tabular-nums}
+.ink{fill:#16171a}.ink2{fill:#3a3c42}.mute{fill:#8a8d95}.faint{fill:#c4c6cc}
+.over{fill:#8a8d95;font-weight:600;letter-spacing:.09em}
+.hair{fill:#eceef1}.hair-s{stroke:#eceef1}.faint-s{stroke:#c4c6cc}.tint{fill:#f6f7f9}.bg{fill:#ffffff}
+.blue{fill:#3366f0}.blue-s{stroke:#3366f0}.blue-t{fill:#eaf0ff}
+.amber{fill:#e09a1f}.amber-t{fill:#fff1d6}.green{fill:#1f9d61}.red{fill:#d4493b}.claude{fill:#d97757}
+.cell{fill:#eceef1}.cell.on{fill:#3366f0}
+.rail{fill:#e3e5e9}.rail.on{fill:#3366f0}.rail.amber{fill:#e09a1f}.rail.green{fill:#1f9d61}.rail.red{fill:#d4493b}
+@media (prefers-color-scheme: dark){
+.ink{fill:#f1f2f4}.ink2{fill:#c9cbd0}.mute,.over{fill:#8d9099}.faint{fill:#4a4c53}
+.hair,.cell,.rail{fill:#2e3035}.hair-s{stroke:#2e3035}.faint-s{stroke:#4a4c53}.tint{fill:#24262a}.bg{fill:#1c1d20}
+.blue,.cell.on,.rail.on{fill:#7fa2ff}.blue-s{stroke:#7fa2ff}.blue-t{fill:#23304f}
+.amber,.rail.amber{fill:#f2b34a}.amber-t{fill:#3a2f1c}.green,.rail.green{fill:#4cc98c}.red,.rail.red{fill:#f07a6e}
+}
+</style><rect x="2" y="10" width="3" height="38" rx="1.5" class="rail"/><text x="17" y="26" class="ink" font-size="14" font-weight="500">Release notes go out on Mondays</text><path class="mute" transform="translate(17 36) scale(0.92)" d="M1 7.2C1 4.6 2.4 2.7 4.6 2l.4.9C3.7 3.5 3.1 4.4 3 5.5h1.8V10H1zm6 0C7 4.6 8.4 2.7 10.6 2l.4.9C9.7 3.5 9.1 4.4 9 5.5h1.8V10H7z"/><text x="31" y="45" class="mute" font-size="12">Your words</text><text x="103.52" y="45" class="mute" font-size="12">· 3w</text></svg><svg x="20" y="590" width="620" height="58" viewBox="0 0 620 58"><style>
+text{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, sans-serif;font-variant-numeric:tabular-nums}
+.ink{fill:#16171a}.ink2{fill:#3a3c42}.mute{fill:#8a8d95}.faint{fill:#c4c6cc}
+.over{fill:#8a8d95;font-weight:600;letter-spacing:.09em}
+.hair{fill:#eceef1}.hair-s{stroke:#eceef1}.faint-s{stroke:#c4c6cc}.tint{fill:#f6f7f9}.bg{fill:#ffffff}
+.blue{fill:#3366f0}.blue-s{stroke:#3366f0}.blue-t{fill:#eaf0ff}
+.amber{fill:#e09a1f}.amber-t{fill:#fff1d6}.green{fill:#1f9d61}.red{fill:#d4493b}.claude{fill:#d97757}
+.cell{fill:#eceef1}.cell.on{fill:#3366f0}
+.rail{fill:#e3e5e9}.rail.on{fill:#3366f0}.rail.amber{fill:#e09a1f}.rail.green{fill:#1f9d61}.rail.red{fill:#d4493b}
+@media (prefers-color-scheme: dark){
+.ink{fill:#f1f2f4}.ink2{fill:#c9cbd0}.mute,.over{fill:#8d9099}.faint{fill:#4a4c53}
+.hair,.cell,.rail{fill:#2e3035}.hair-s{stroke:#2e3035}.faint-s{stroke:#4a4c53}.tint{fill:#24262a}.bg{fill:#1c1d20}
+.blue,.cell.on,.rail.on{fill:#7fa2ff}.blue-s{stroke:#7fa2ff}.blue-t{fill:#23304f}
+.amber,.rail.amber{fill:#f2b34a}.amber-t{fill:#3a2f1c}.green,.rail.green{fill:#4cc98c}.red,.rail.red{fill:#f07a6e}
+}
+</style><rect x="2" y="10" width="3" height="38" rx="1.5" class="rail"/><text x="17" y="26" class="ink" font-size="14" font-weight="500">This fix touches only the parser</text><path class="mute" transform="translate(17 36) scale(0.92)" d="M1 7.2C1 4.6 2.4 2.7 4.6 2l.4.9C3.7 3.5 3.1 4.4 3 5.5h1.8V10H1zm6 0C7 4.6 8.4 2.7 10.6 2l.4.9C9.7 3.5 9.1 4.4 9 5.5h1.8V10H7z"/><text x="31" y="45" class="mute" font-size="12">Your words</text><text x="103.52" y="45" class="mute" font-size="12">· 5h · this task</text></svg><svg x="20" y="662" width="620" height="30" viewBox="0 0 620 30"><style>
+text{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, sans-serif;font-variant-numeric:tabular-nums}
+.ink{fill:#16171a}.ink2{fill:#3a3c42}.mute{fill:#8a8d95}.faint{fill:#c4c6cc}
+.over{fill:#8a8d95;font-weight:600;letter-spacing:.09em}
+.hair{fill:#eceef1}.hair-s{stroke:#eceef1}.faint-s{stroke:#c4c6cc}.tint{fill:#f6f7f9}.bg{fill:#ffffff}
+.blue{fill:#3366f0}.blue-s{stroke:#3366f0}.blue-t{fill:#eaf0ff}
+.amber{fill:#e09a1f}.amber-t{fill:#fff1d6}.green{fill:#1f9d61}.red{fill:#d4493b}.claude{fill:#d97757}
+.cell{fill:#eceef1}.cell.on{fill:#3366f0}
+.rail{fill:#e3e5e9}.rail.on{fill:#3366f0}.rail.amber{fill:#e09a1f}.rail.green{fill:#1f9d61}.rail.red{fill:#d4493b}
+@media (prefers-color-scheme: dark){
+.ink{fill:#f1f2f4}.ink2{fill:#c9cbd0}.mute,.over{fill:#8d9099}.faint{fill:#4a4c53}
+.hair,.cell,.rail{fill:#2e3035}.hair-s{stroke:#2e3035}.faint-s{stroke:#4a4c53}.tint{fill:#24262a}.bg{fill:#1c1d20}
+.blue,.cell.on,.rail.on{fill:#7fa2ff}.blue-s{stroke:#7fa2ff}.blue-t{fill:#23304f}
+.amber,.rail.amber{fill:#f2b34a}.amber-t{fill:#3a2f1c}.green,.rail.green{fill:#4cc98c}.red,.rail.red{fill:#f07a6e}
+}
+</style><text x="0" y="21" class="over" font-size="10.5">FORGOTTEN</text><rect x="77.85" y="10" width="20" height="15" rx="7.5" class="tint"/><text x="87.85" y="21" class="mute" font-size="10.5" font-weight="600" text-anchor="middle">1</text></svg><svg x="20" y="696" width="620" height="58" viewBox="0 0 620 58"><style>
+text{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, sans-serif;font-variant-numeric:tabular-nums}
+.ink{fill:#16171a}.ink2{fill:#3a3c42}.mute{fill:#8a8d95}.faint{fill:#c4c6cc}
+.over{fill:#8a8d95;font-weight:600;letter-spacing:.09em}
+.hair{fill:#eceef1}.hair-s{stroke:#eceef1}.faint-s{stroke:#c4c6cc}.tint{fill:#f6f7f9}.bg{fill:#ffffff}
+.blue{fill:#3366f0}.blue-s{stroke:#3366f0}.blue-t{fill:#eaf0ff}
+.amber{fill:#e09a1f}.amber-t{fill:#fff1d6}.green{fill:#1f9d61}.red{fill:#d4493b}.claude{fill:#d97757}
+.cell{fill:#eceef1}.cell.on{fill:#3366f0}
+.rail{fill:#e3e5e9}.rail.on{fill:#3366f0}.rail.amber{fill:#e09a1f}.rail.green{fill:#1f9d61}.rail.red{fill:#d4493b}
+@media (prefers-color-scheme: dark){
+.ink{fill:#f1f2f4}.ink2{fill:#c9cbd0}.mute,.over{fill:#8d9099}.faint{fill:#4a4c53}
+.hair,.cell,.rail{fill:#2e3035}.hair-s{stroke:#2e3035}.faint-s{stroke:#4a4c53}.tint{fill:#24262a}.bg{fill:#1c1d20}
+.blue,.cell.on,.rail.on{fill:#7fa2ff}.blue-s{stroke:#7fa2ff}.blue-t{fill:#23304f}
+.amber,.rail.amber{fill:#f2b34a}.amber-t{fill:#3a2f1c}.green,.rail.green{fill:#4cc98c}.red,.rail.red{fill:#f07a6e}
+}
+</style><rect x="2" y="10" width="3" height="38" rx="1.5" class="rail"/><text x="17" y="26" class="mute" font-size="14" font-weight="500" text-decoration="line-through">Deploy from the release branch</text><text x="17" y="45" class="mute" font-size="12">Forgotten · Restore brings it back</text></svg><rect x="543" y="712" width="87" height="26" rx="13" fill="none" stroke="#3366f0" stroke-width="1.5"/><text x="586.5" y="729.5" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, sans-serif" font-size="12.5" font-weight="500" text-anchor="middle" class="ink">↺ Restore</text></svg>

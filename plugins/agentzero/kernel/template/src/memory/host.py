@@ -20,8 +20,31 @@ _BARE = re.compile(r"(?<![\w/.-])python(?= -m )")
 
 
 def interpreter() -> str:
-    """`python3` when on PATH, else `python` — the same rule the hooks use."""
-    return "python3" if shutil.which("python3") else "python"
+    """`python3` when it runs here, else `python` — the same rule the hooks use.
+
+    On PATH is not enough: Windows puts a `python3.exe` alias in WindowsApps that,
+    with no Store Python installed, only prints "Python was not found" and exits
+    9009. Picking it wired every hook to a command that never ran.
+    """
+    found = shutil.which("python3")
+    return "python3" if found and _runs(found) else "python"
+
+
+_RUNS: dict[str, bool] = {}
+
+
+def _runs(path: str) -> bool:
+    """Whether this executable starts a Python. Cached: render() calls this often."""
+    import subprocess
+
+    if path not in _RUNS:
+        try:
+            probe = subprocess.run([path, "-c", ""], capture_output=True, timeout=10)
+        except (OSError, subprocess.TimeoutExpired):
+            _RUNS[path] = False
+        else:
+            _RUNS[path] = probe.returncode == 0
+    return _RUNS[path]
 
 
 def render(text: str, exe: str | None = None) -> str:
@@ -30,7 +53,7 @@ def render(text: str, exe: str | None = None) -> str:
 
 
 _LAUNCHED = ("memory", "knowledge", "skills")
-"""What `./a0` runs: the packages a workspace uses. `adapter` lives in a framework checkout."""
+"""What `./a0` runs: the packages a workspace uses. `adapter` is the framework's own."""
 
 
 def command(args: str) -> str:
@@ -38,10 +61,15 @@ def command(args: str) -> str:
 
     A workspace command goes through `./a0` (SETTLED #71), which picks the workspace's own
     `src/` and a Python with PyYAML; spelled out, 13 of System.md's 15 commands had lost
-    their `PYTHONPATH=src`. Framework commands keep the spelled-out form.
+    their `PYTHONPATH=src`. A framework command is `agentroot`, which an installed package
+    and `pip install -e .` in a checkout both put on PATH, and which runs from any folder;
+    `python -m adapter` worked only from inside a checkout.
     """
-    if args.split(" ", 1)[0] in _LAUNCHED:
+    word, _, rest = args.partition(" ")
+    if word in _LAUNCHED:
         return f"./a0 {args}"
+    if word == "adapter":
+        return f"agentroot {rest}".rstrip()
     return f"PYTHONPATH=src {interpreter()} -m {args}"
 
 

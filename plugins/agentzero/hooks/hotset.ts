@@ -13,7 +13,7 @@ export function hintsFrom(prompt: string): string {
 
 export function hotSetContext(output: string, localTime: string): string {
   return [
-    `AgentZero hot set, loaded by the Claude Code plugin at ${localTime}.`,
+    `AgentRoot hot set, loaded by the Claude Code plugin at ${localTime}.`,
     'Rule 3 is done for this session: do not run hot-set again unless your context is compacted or cleared.',
     '',
     output,

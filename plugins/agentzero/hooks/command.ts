@@ -4,19 +4,21 @@ import type { HudState } from '../types'
 import { EMPTY_HUD, refreshJob, type HudIo } from './snapshot'
 import { locateWorkspace, sessionData } from './session'
 import { PYTHON_PROBE, findPython } from './python'
+import { MEMORY_PANE, MEMORY_TITLE } from './memory'
 import { REVIEW_PANE, REVIEW_TITLE } from './pane'
 import { findWorkspace } from './workspace'
 
 const USAGE = [
-  'Usage: /agentzero <init|upgrade|status|review>',
-  '  init     make this project folder an AgentZero workspace for Claude Code',
-  '  upgrade  bring this workspace to the plugin\'s AgentZero version',
+  'Usage: /agentroot <init|upgrade|status|review|memory>',
+  '  init     make this project folder an AgentRoot workspace for Claude Code',
+  '  upgrade  bring this workspace to the plugin\'s AgentRoot version',
   '  status   show whether this workspace can run, and the plugin and kernel versions',
   '  review   open the pane of what waits for your yes',
+  '  memory   open the pane of the Facts the assistant applies',
 ].join('\n')
 
 const NO_PYTHON = [
-  'AgentZero needs Python 3.11 or newer with PyYAML, and none was found',
+  'AgentRoot needs Python 3.11 or newer with PyYAML, and none was found',
   `(tried python3, python and the usual install folders; the check is: python3 -c "${PYTHON_PROBE}").`,
   'Install PyYAML with:',
   '  python3 -m pip install pyyaml',
@@ -34,15 +36,15 @@ function trimSlash(path: string): string {
 export function initRefusal(root: string, home: string | undefined, workspace: string | null): string | null {
   const dir = trimSlash(root)
   if (dir === '/') {
-    return `AgentZero was not set up: ${dir} is the filesystem root. Open a project folder and run /agentzero init there.`
+    return `AgentRoot was not set up: ${dir} is the filesystem root. Open a project folder and run /agentroot init there.`
   }
   if (home !== undefined && dir === trimSlash(home)) {
-    return `AgentZero was not set up: ${dir} is your home folder. Open a project folder and run /agentzero init there.`
+    return `AgentRoot was not set up: ${dir} is your home folder. Open a project folder and run /agentroot init there.`
   }
   if (workspace !== null) {
     return workspace === dir
-      ? `AgentZero was not set up: ${dir} is already an AgentZero workspace. Use /agentzero upgrade or /agentzero status.`
-      : `AgentZero was not set up: ${dir} is inside the AgentZero workspace ${workspace}. Open a project folder outside it and run /agentzero init there.`
+      ? `AgentRoot was not set up: ${dir} is already an AgentRoot workspace. Use /agentroot upgrade or /agentroot status.`
+      : `AgentRoot was not set up: ${dir} is inside the AgentRoot workspace ${workspace}. Open a project folder outside it and run /agentroot init there.`
   }
   return null
 }
@@ -56,9 +58,15 @@ const hudAtom = atom({ plugin: 'agentzero', key: 'hud' } as const, EMPTY_HUD as 
 export function registerCommand(on: On): void {
   on('session.start', async ($, e, next) => {
     await $.command.register({
+      name: 'agentroot',
+      description: 'Set up, upgrade, check, review or browse AgentRoot in this project (init, upgrade, status, review, memory)',
+      argumentHint: '<init|upgrade|status|review|memory>',
+    })
+    // the product's old name, kept so a habit or a doc that names it still works
+    await $.command.register({
       name: 'agentzero',
-      description: 'Set up, upgrade, check or review AgentZero in this project (init, upgrade, status, review)',
-      argumentHint: '<init|upgrade|status|review>',
+      description: 'The old name of /agentroot',
+      argumentHint: '<init|upgrade|status|review|memory>',
     })
     const data = sessionData(await $.session.id())
     const workspace = await locateWorkspace(data, () => $.session.root(), p => $.fs.stat(p).then(() => true, () => false))
@@ -75,9 +83,9 @@ export function registerCommand(on: On): void {
     return next(e)
   })
 
-  on('command.run', { command: 'agentzero' }, async ($, e) => {
+  for (const command of ['agentroot', 'agentzero'] as const) on('command.run', { command }, async ($, e) => {
     const sub = e.args.trim().split(/\s+/)[0] ?? ''
-    if (sub !== 'init' && sub !== 'upgrade' && sub !== 'status' && sub !== 'review') return { text: USAGE }
+    if (sub !== 'init' && sub !== 'upgrade' && sub !== 'status' && sub !== 'review' && sub !== 'memory') return { text: USAGE }
 
     const root = trimSlash(await $.session.root())
     const exists = (p: string) => $.fs.stat(p).then(() => true, () => false)
@@ -87,11 +95,12 @@ export function registerCommand(on: On): void {
       const refusal = initRefusal(root, await $.env.get('HOME'), workspace)
       if (refusal !== null) return { text: refusal }
     } else if (workspace === null) {
-      return { text: `AgentZero: ${root} is not inside an AgentZero workspace. Run /agentzero init in a project folder first.` }
+      return { text: `AgentRoot: ${root} is not inside an AgentRoot workspace. Run /agentroot init in a project folder first.` }
     }
 
-    if (sub === 'review' && workspace !== null) {
-      await $.ui.open({ id: REVIEW_PANE, title: REVIEW_TITLE })
+    if ((sub === 'review' || sub === 'memory') && workspace !== null) {
+      const review = sub === 'review'
+      await $.ui.open({ ...(review ? { id: REVIEW_PANE, title: REVIEW_TITLE } : { id: MEMORY_PANE, title: MEMORY_TITLE }), focus: true })
       const data = sessionData(await $.session.id())
       const io: HudIo = {
         run: (argv, init) => $.process.run(argv, init),
@@ -101,7 +110,7 @@ export function registerCommand(on: On): void {
         pluginRoot: $.plugin.root,
       }
       await data.gate.run(refreshJob(io, workspace))
-      return { text: 'Opened the AgentZero review pane.' }
+      return { text: review ? 'Opened the AgentRoot review pane.' : 'Opened the AgentRoot memory pane.' }
     }
 
     const python = await findPython(argv => $.process.run(argv, { timeoutMs: PROBE_TIMEOUT_MS }))
@@ -118,16 +127,16 @@ export function registerCommand(on: On): void {
 
     if (sub === 'init') {
       const ran = await kernel(['init', root, '--harness', 'claude'])
-      if (ran.exitCode !== 0) return { text: `AgentZero init failed (exit ${ran.exitCode}):\n${shown(ran)}` }
+      if (ran.exitCode !== 0) return { text: `AgentRoot init failed (exit ${ran.exitCode}):\n${shown(ran)}` }
       return {
-        text: `${shown(ran)}\nAgentZero is set up in ${root}. Start a new session here: the workspace's CLAUDE.md and hooks load when a session starts.`.trimStart(),
+        text: `${shown(ran)}\nAgentRoot is set up in ${root}. Start a new session here: the workspace's CLAUDE.md and hooks load when a session starts.`.trimStart(),
       }
     }
 
     // never --force: when the kernel stops on a file the operator edited, show its words as they are
     if (sub === 'upgrade') {
       const ran = await kernel(['materialize', workspace as string, '--harness', 'claude'])
-      return { text: shown(ran) || `AgentZero upgrade finished (exit ${ran.exitCode}).` }
+      return { text: shown(ran) || `AgentRoot upgrade finished (exit ${ran.exitCode}).` }
     }
 
     const ran = await kernel(['preflight', workspace as string])

@@ -10,6 +10,7 @@ every machine so they are copied.
 from __future__ import annotations
 
 import hashlib
+import os
 import shutil
 import tomllib
 from collections.abc import Sequence
@@ -336,8 +337,20 @@ def apply_upgrade(
         if source.is_file():
             shutil.copy2(source, workspace / launcher)
             written.append(launcher)
+    mark_launchers_executable(workspace)
     write_stamp(workspace, framework_root=framework_root, packages=packages)
     return written
+
+
+def mark_launchers_executable(workspace: Path) -> None:
+    """`./a0` keeps its mode through a git checkout, not through a wheel.
+
+    An installed package may unpack it without the executable bit, and a copy carries
+    that over; preflight then fails the launcher on every POSIX host.
+    """
+    launcher = workspace / "a0"
+    if os.name != "nt" and launcher.is_file():
+        launcher.chmod(launcher.stat().st_mode | 0o111)
 
 
 @dataclass(frozen=True)

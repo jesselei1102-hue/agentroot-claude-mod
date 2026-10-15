@@ -195,17 +195,21 @@ def main() -> None:
 def hook_output(payload: Mapping[str, Any], workspace_root: Path) -> dict[str, Any]:
     """What the hook answers the harness: nothing, or one line asking for the hot set.
 
-    Codex and Claude Code add a UserPromptSubmit hook's `additionalContext` to the turn;
-    Cursor's beforeSubmitPrompt can only allow or block, so it gets nothing.
+    Codex and Claude Code add a UserPromptSubmit hook's `additionalContext` to the turn.
+    Cursor adds a beforeSubmitPrompt hook's `additional_context` (checked in 3.24.9); it
+    was once told nothing, on the belief that this hook could only allow or block.
     """
-    if payload.get("hook_event_name") != "UserPromptSubmit":
+    event = payload.get("hook_event_name")
+    if event not in ("UserPromptSubmit", _PROMPT_EVENT):
         return {}
     from memory.runstate import prompt_reminder
 
-    session = payload.get("session_id")
+    session = payload.get("session_id") or payload.get("conversation_id")
     line = prompt_reminder(workspace_root, session=str(session) if session else None)
     if not line:
         return {}
+    if event == _PROMPT_EVENT:
+        return {"additional_context": line}
     return {
         "hookSpecificOutput": {"hookEventName": "UserPromptSubmit", "additionalContext": line}
     }

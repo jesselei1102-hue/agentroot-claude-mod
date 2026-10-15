@@ -15,14 +15,10 @@ for (const surface of ['desktop', 'terminal'] as const) {
   test(`a remember row draws the green card on ${surface}`, async ($, on) => {
     world(on)
     const ui = await mountRow($, surface, ROW())
-    if (surface === 'desktop') {
-      const svg = await ui.find({ type: 'Svg' })
-      expect(svg?.props.alt).toBe('Remembered: Use pnpm, never npm')
-      expect(String(svg?.props.source)).toContain('✓ checked')
-    } else {
-      expect(await ui.find({ text: /Remembered/ })).toBeDefined()
-      expect(await ui.find({ text: /checked/ })).toBeDefined()
-    }
+    expect(await ui.find({ text: '📌 Remembered' })).toBeDefined()
+    expect(await ui.find({ text: 'Use pnpm, never npm' })).toBeDefined()
+    expect(await ui.find({ text: 'Your words: “Use pnpm in this project, never npm.” ✓ checked' })).toBeDefined()
+    expect(await ui.find({ type: 'Svg' })).toBeUndefined()
   })
 }
 
@@ -46,9 +42,8 @@ test('a rewritten remember draws the amber card', async ($, on) => {
   const id = w.toolUseIds.at(-1)
   expect(w.commands.at(-1)).toContain('propose fact')
   const ui = await mountRow($, 'desktop', ROW({ tool_use_id: id, output: { stdout: 'proposed: a — Use pnpm, never npm\n', stderr: '' } }))
-  const source = String((await ui.find({ type: 'Svg' }))?.props.source)
-  expect(source).toContain('Waiting for you')
-  expect(source).toContain('Not in your words, so saved as a proposal')
+  expect(await ui.find({ text: '⏳ Waiting for you' })).toBeDefined()
+  expect(await ui.find({ text: 'Not in your words, so saved as a proposal' })).toBeDefined()
 })
 
 test('the raw command opens and closes', async ($, on) => {
@@ -69,7 +64,8 @@ test('a read of a builtin skill draws the skill card', async ($, on) => {
     tool_use_id: 'tu5', tool: 'Read', input: { file_path: '/w/skills/builtin/analyze.md' },
     isRunning: false, isErrored: false, isInterrupted: false, output: { type: 'text' },
   })
-  expect((await ui.find({ type: 'Svg' }))?.props.alt).toBe('Skill used: analyze')
+  expect(await ui.find({ text: '🧭 Skill used' })).toBeDefined()
+  expect(await ui.find({ text: 'analyze' })).toBeDefined()
 })
 
 test('on the terminal a folded group with a write opens; others stay folded', async ($, on) => {
@@ -89,8 +85,10 @@ test('on the desktop a folded group with a write shows its cards itself', async 
   const group = (calls: unknown[]) =>
     $.ui.render({ surface: 'desktop', component: 'ToolGroup', props: { calls, isActive: false, isExpanded: false } } as never)
   const drawn = JSON.stringify(await group([ROW(), ROW({ tool_use_id: 'tu2', input: { command: 'ls' }, output: { stdout: 'x', stderr: '' } })]))
-  expect(drawn).toContain('Remembered: Use pnpm, never npm')
+  expect(drawn).toContain('📌 Remembered')
+  expect(drawn).toContain('Use pnpm, never npm')
   expect(drawn).toContain('+1 other command')
+  expect(drawn).not.toContain('"Svg"')
   expect(w.engineDrew).toEqual([])
   await group([ROW({ input: { command: 'ls' }, output: { stdout: 'x', stderr: '' } })])
   expect(w.engineDrew).toEqual(['ToolGroup'])

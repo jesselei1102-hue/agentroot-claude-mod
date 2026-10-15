@@ -3,22 +3,24 @@
 from __future__ import annotations
 
 import json
-import shutil
 from pathlib import Path
 
+from adapter.hookscript import install_hook_script
 from memory.host import interpreter, render
 
-_ASSETS = Path(__file__).resolve().parent / "assets"
 _AGENTS = "AGENTS.md"
 _OVERRIDE = "AGENTS.override.md"
+LEGACY_CURSOR_RULE = Path(".cursor") / "rules" / "system.mdc"
+LEGACY_CURSOR_RULE_HEAD = "---\ndescription: AgentZero System"
+"""How the rule an older Cursor adapter generated begins; one the operator wrote does not."""
 GENERATED = "# AgentZero System (generated)"
 _HEADER = f"""\
 {GENERATED}
 
-Do not edit by hand. Refresh with:
-`PYTHONPATH=src python -m adapter materialize --harness codex`
+Do not edit by hand. Refresh with `agentroot materialize --harness codex`
+(in a framework checkout: `PYTHONPATH=src python -m adapter materialize --harness codex`).
 
-Codex reads this file; Claude Code reads it through `CLAUDE.md`.
+Codex and Cursor read this file; Claude Code reads it through `CLAUDE.md`.
 
 """
 
@@ -44,24 +46,27 @@ def agents_md(system: str) -> str:
 
 
 def write_agents_md(workspace: Path) -> None:
-    """The one generated copy of `System.md`, which Codex and Claude Code both read.
+    """The one generated copy of `System.md`, which Codex, Cursor and Claude Code read.
 
     Codex reads `AGENTS.override.md` instead of `AGENTS.md` when both are there, so an
     override AgentZero generated before 2026-09-27 is removed; one the operator wrote is
-    left for preflight to point out.
+    left for preflight to point out. Cursor loads `AGENTS.md` beside its own rules, so the
+    `.cursor/rules/system.mdc` an older Cursor adapter generated would be a second copy.
     """
     system = (workspace / "System.md").read_text(encoding="utf-8")
     (workspace / _AGENTS).write_text(agents_md(system), encoding="utf-8")
-    override = workspace / _OVERRIDE
-    if override.is_file() and override.read_text(encoding="utf-8").startswith(GENERATED):
-        override.unlink()
+    for generated, head in (
+        (workspace / _OVERRIDE, GENERATED),
+        (workspace / LEGACY_CURSOR_RULE, LEGACY_CURSOR_RULE_HEAD),
+    ):
+        if generated.is_file() and generated.read_text(encoding="utf-8").startswith(head):
+            generated.unlink()
 
 
 def materialize_codex(workspace: Path) -> None:
     """Write `AGENTS.md` and `.codex/` Trace hooks from `System.md`."""
     write_agents_md(workspace)
-    hooks_dir = workspace / ".codex" / "hooks"
-    hooks_dir.mkdir(parents=True, exist_ok=True)
+    install_hook_script(workspace / ".codex" / "hooks")
     hooks_config = {
         "description": "AgentZero Trace capture for Codex",
         "hooks": {
@@ -83,9 +88,3 @@ def materialize_codex(workspace: Path) -> None:
         json.dumps(hooks_config, indent=2) + "\n",
         encoding="utf-8",
     )
-    for asset in _ASSETS.iterdir():
-        if asset.is_file():
-            target = hooks_dir / asset.name
-            shutil.copy2(asset, target)
-            if asset.suffix == ".sh":
-                target.chmod(target.stat().st_mode | 0o111)

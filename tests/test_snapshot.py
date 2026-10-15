@@ -9,7 +9,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 KERNEL_SRC = ROOT / "plugins/agentzero/kernel/src"
 SCRIPT = ROOT / "plugins/agentzero/tools/snapshot.py"
-UPGRADE = "this workspace's AgentZero is too old for the HUD; run /agentzero upgrade"
+UPGRADE = "this workspace's AgentRoot is too old for the HUD; run /agentroot upgrade"
 
 
 def _env(pythonpath):
@@ -90,3 +90,58 @@ def test_python_without_pyyaml_says_so(ws, tmp_path):
     code, snap = snapshot(ws, pythonpath=f"{tmp_path / 'noyaml'}{os.pathsep}{ws / 'src'}")
     assert code == 0
     assert snap == {"schema": 1, "error": "no usable Python 3.11 with PyYAML"}
+
+
+def test_facts_newest_first_with_fields(ws):
+    mem(ws, "remember", "Use pnpm, never npm.", "--said", "Use pnpm, never npm.")
+    mem(ws, "remember", "Reply in English.", "--said", "Reply in English.")
+    _, snap = snapshot(ws)
+    first, second = snap["facts"]
+    assert first["sentence"] == "Reply in English." and second["sentence"] == "Use pnpm, never npm."
+    assert first["id"].startswith("fact:") and first["said"] == "Reply in English."
+    assert first["author"] == "human" and first["scope"] == "project" and first["inHotSet"] is False
+    assert first["createdAt"][:4].isdigit()
+    assert snap["active"] == 2
+
+
+def test_confirmed_proposal_is_agent_without_words(ws):
+    mem(ws, "propose", "fact", "Never deploy on Fridays.")
+    [item] = snapshot(ws)[1]["pending"]
+    mem(ws, "review", "--confirm", item["id"])
+    [fact] = snapshot(ws)[1]["facts"]
+    assert fact["author"] == "agent" and fact["said"] is None
+
+
+def test_in_hot_set_after_a_load(ws):
+    mem(ws, "remember", "Deploy with make ship.", "--said", "Deploy with make ship.")
+    mem(ws, "hot-set", "--scope", "project", "--hints", "deploy")
+    assert snapshot(ws)[1]["facts"][0]["inHotSet"] is True
+
+
+def test_proposed_and_retired_are_not_listed(ws):
+    mem(ws, "propose", "fact", "Maybe tabs.")
+    mem(ws, "remember", "Use pnpm.", "--said", "Use pnpm.")
+    fact_id = snapshot(ws)[1]["facts"][0]["id"]
+    mem(ws, "forget", fact_id)
+    _, snap = snapshot(ws)
+    assert snap["facts"] == [] and snap["active"] == 0
+
+
+def test_facts_keep_chinese(ws):
+    mem(ws, "remember", "周五不部署", "--said", "周五不部署")
+    assert "周五不部署" in run_snapshot(ws).stdout.decode("utf-8")
+
+
+def test_a_fact_names_its_key_and_what_it_replaced(ws):
+    mem(ws, "remember", "Stand-up at 9.", "--said", "Stand-up at 9.", "--fact-key", "standup")
+    mem(ws, "remember", "Stand-up at 10.", "--said", "Stand-up at 10.", "--fact-key", "standup")
+    _, snap = snapshot(ws)
+    [f] = snap["facts"]
+    assert f["factKey"] == "standup" and f["replaces"] == "Stand-up at 9."
+
+
+def test_a_fact_without_a_key_replaces_nothing(ws):
+    mem(ws, "remember", "Use pnpm.", "--said", "Use pnpm.")
+    _, snap = snapshot(ws)
+    [f] = snap["facts"]
+    assert f["factKey"] is None and f["replaces"] is None

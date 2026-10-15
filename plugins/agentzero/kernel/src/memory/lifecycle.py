@@ -14,7 +14,7 @@ from memory.graph import GraphActivation, activate_graph, parse_graph, repoint_f
 from memory.text import RESEMBLES, resemblance, sentence_key, slug
 
 _FIELDS = ("id", "rule", "scope", "author", "status", "created_at", "source_run")
-_OPTIONAL_FIELDS = ("fact_key", "effective_from", "effective_to", "tags", "said")
+_OPTIONAL_FIELDS = ("fact_key", "effective_from", "effective_to", "tags", "said", "heard")
 _SCOPES = frozenset({"task", "project"})
 _AUTHORS = frozenset({"human", "agent"})
 _STATUSES = frozenset({"proposed", "active", "retired"})
@@ -36,6 +36,9 @@ class MemoryEntry:
     tags: tuple[str, ...] = ()
     said: str | None = None
     """The operator's own words an operator-stated Fact was recorded from (`remember --said`)."""
+    heard: str | None = None
+    """The operator's message as the prompt hook staged it, when `said` came from it and
+    differs: the harness's record beside the agent's quote (SETTLED #95)."""
 
     @property
     def effective_fact_key(self) -> str:
@@ -65,6 +68,7 @@ def record_entry(
     effective_to: str | None = None,
     tags: Sequence[str] | None = None,
     said: str | None = None,
+    heard: str | None = None,
 ) -> MemoryEntry:
     """Write a Memory entry. Human-authored facts enter active; agent-inferred stay proposed."""
     status = "active" if author == "human" else "proposed"
@@ -87,6 +91,8 @@ def record_entry(
         payload["tags"] = list(tags)
     if said is not None:
         payload["said"] = said
+    if heard is not None:
+        payload["heard"] = heard
     entry = _from_mapping(payload)
     _write(destination, entry)
     return entry
@@ -113,6 +119,7 @@ def remember_fact(
     source_run: str = "operator-stated",
     now: datetime | None = None,
     said: str | None = None,
+    heard: str | None = None,
 ) -> Remembered:
     """Record something the operator said, active at once (SETTLED #26).
 
@@ -133,6 +140,7 @@ def remember_fact(
         source_run=source_run,
         now=now,
         said=said,
+        heard=heard,
     )
 
 
@@ -146,6 +154,7 @@ def propose_fact(
     source_run: str = "agent-inferred",
     now: datetime | None = None,
     said: str | None = None,
+    heard: str | None = None,
 ) -> Remembered:
     """Record something the agent inferred. It stays `proposed` until the operator confirms.
 
@@ -168,6 +177,7 @@ def propose_fact(
         source_run=source_run,
         now=now,
         said=said,
+        heard=heard,
     )
 
 
@@ -201,6 +211,7 @@ def _write_fact(
     source_run: str,
     now: datetime | None,
     said: str | None = None,
+    heard: str | None = None,
 ) -> Remembered:
     rule = rule.strip()
     if not rule:
@@ -232,6 +243,7 @@ def _write_fact(
         fact_key=fact_key,
         tags=tags or None,
         said=(said or "").strip() or None,
+        heard=heard,
     )
     superseded: tuple[MemoryEntry, ...] = ()
     if fact_key and entry.status == "active":
@@ -823,6 +835,7 @@ def _from_mapping(payload: dict[str, Any]) -> MemoryEntry:
         effective_to=_parse_optional_timestamp(payload.get("effective_to"), field="effective_to"),
         tags=tags,
         said=None if payload.get("said") in (None, "") else str(payload["said"]),
+        heard=None if payload.get("heard") in (None, "") else str(payload["heard"]),
     )
 
 

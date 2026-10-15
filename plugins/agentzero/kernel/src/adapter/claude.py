@@ -16,21 +16,20 @@ rather than relying on the default.
 from __future__ import annotations
 
 import json
-import shutil
 from pathlib import Path
 from typing import Any
 
 from adapter.codex import write_agents_md
+from adapter.hookscript import install_hook_script
 from memory.host import interpreter, render
 
-_ASSETS = Path(__file__).resolve().parent / "assets"
 _HOOK_SCRIPT = ".claude/hooks/write-trace.py"
 
 CLAUDE_MD = """\
 # AgentZero System (generated)
 
-Do not edit by hand. Refresh with:
-`PYTHONPATH=src python -m adapter materialize --harness claude`
+Do not edit by hand. Refresh with `agentroot materialize --harness claude`
+(in a framework checkout: `PYTHONPATH=src python -m adapter materialize --harness claude`).
 
 The System body lives in `AGENTS.md`, generated from the portable `System.md`.
 This file imports it so Claude loads it whether or not a `CLAUDE.md` exists.
@@ -68,14 +67,7 @@ def materialize_claude(workspace: Path) -> None:
     write_agents_md(workspace)  # AGENTS.md is the single generated System body
     (workspace / "CLAUDE.md").write_text(render(CLAUDE_MD), encoding="utf-8")
 
-    hooks_dir = workspace / ".claude" / "hooks"
-    hooks_dir.mkdir(parents=True, exist_ok=True)
-    for asset in _ASSETS.iterdir():
-        if asset.is_file():
-            target = hooks_dir / asset.name
-            shutil.copy2(asset, target)
-            if asset.suffix == ".sh":
-                target.chmod(target.stat().st_mode | 0o111)
+    install_hook_script(workspace / ".claude" / "hooks")
 
     settings_path = workspace / ".claude" / "settings.json"
     settings_path.write_text(

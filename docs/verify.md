@@ -67,3 +67,34 @@ Findings about the desktop app (probes `az-probe`, `az-probe2`, `az-mock`, 2026-
 - Earlier finding corrected: item 3 above holds for the terminal only; the desktop runs the cached copy.
 
 The lab workspace was reset afterwards at the operator's request: the old one is kept as `~/Documents/AgentZero-Claude-Lab.bak-20261006`; the new one was made with the plugin's kernel 0.4.7.
+
+## Memory pane acceptance in the lab workspace (plugin 1.2.0-rc.1)
+
+Run in the desktop app after `claude plugin update agentzero@agentzero --scope local` and an app restart.
+
+| By-hand step | Seen | Result |
+|---|---|---|
+| 1. The assistant remembers two or three throwaway Facts (not the "reply in English" one) | | |
+| 2. The Memory pane: count, order (newest first), your words, `in hot set` | | |
+| 3. Forget one: the card goes grey; its YAML file says `status: retired`; the band count drops by one | | |
+| 4. Ask which Fact was just forgotten: the assistant knows | | |
+| 4b. Forget another, run `/compact`, then ask again: the assistant still knows (the note comes with the reloaded hot set) | | |
+| 5. Keep an item in the Review pane: on the next message the assistant knows | | |
+| 6. Close and reopen the Memory pane: the forgotten row is gone | | |
+| 7. Screenshot saved as `docs/hud/memory-pane.png` | | |
+
+## Instrument HUD (1.4.0-rc.1, 2026-10-15, desktop app, Claude Code 2.1.295, preview mod with fixtures)
+
+Checked by the operator's screenshots of the preview mod (`/azp`), which draws the plugin's own views (`hooks/hud-view.tsx`, `hooks/instruments.ts`) from sample Facts in this session. Not yet seen: the plugin itself in a real workspace (the Lab), dark mode on the final build, the band on the final build.
+
+| Check | Seen | Result |
+|---|---|---|
+| SVG follows light and dark (`prefers-color-scheme`) | probe: both the image and the interactive SVG read DARK in dark mode | pass |
+| Hover reveal in a pane (`display: none` + `hover`) | probe: the hidden line appeared under the pointer | pass |
+| Memory pane, side pane | header `3 of 6 memories in use`, `Hot set loaded today at 14:02`, six-cell gauge, `TO REVIEW 2` and `NEWEST 1h` tiles, the 30-day timeline; `IN USE NOW 3`, `SAVED, NOT IN USE 3`, `FORGOTTEN 1`; cards with rail, `Your words`, `Claude's wording` pill, `Updated` pill, `this task` | pass |
+| Hover on a card | the tinted card with the operator's words; `Forget` in a red outlined pill, centred at the right | pass |
+| Forgotten card | struck through, `Restore` in a blue outlined pill, the cited line in amber | pass |
+| Review pane | `2 to review`, `1 decided in this pane`; amber and green rails; `✓ Keep` (green outline) and `Reject` (dim outline) on each open card | pass |
+| Band | before the fix: scaled 1.3× and `context 41%` cut; fixed by drawing it 1:1 at its own width (f4e703d) | fixed, not re-checked |
+| Text size | at 7 px a column the cards drew about 1.3× large; at 8.8 they match the app's text | pass |
+| Pill label colours | the desktop draws a plain Button's label in its own colour; the outline carries red, blue, green or dim | as designed |

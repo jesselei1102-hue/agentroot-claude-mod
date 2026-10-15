@@ -21,6 +21,7 @@ export type World = {
   snapshotRuns: { argv: readonly string[]; init: unknown }[]
   contextPercent: number | undefined
   opened: string[]
+  openFocus: (boolean | undefined)[]
   engineDrew: string[]
   groupExpanded: boolean[]
 }
@@ -57,6 +58,7 @@ export function world(
     snapshotRuns: [],
     contextPercent: 41,
     opened: [],
+    openFocus: [],
     engineDrew: [],
     groupExpanded: [],
     existing: new Set(opts.existing ?? [`${root}/System.md`, `${root}/memory`, `${root}/a0`]),
@@ -121,6 +123,7 @@ export function world(
   }))
   on('ui.open', async (_$, e) => {
     w.opened.push(e.id)
+    w.openFocus.push(e.focus)
     return { value: { isPlaced: true as const } }
   })
   on('ui.close', async () => ({ value: undefined }))
@@ -134,9 +137,11 @@ export function world(
   }
   on('ui.status', async (_$, e) => {
     w.statuses.push(e.text)
+    return { value: undefined }
   })
   on('ui.toast', async (_$, e) => {
     w.toasts.push(e.text)
+    return { value: undefined }
   })
   return w
 }

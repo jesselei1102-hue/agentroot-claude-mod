@@ -1,0 +1,66 @@
+import type { Fact } from '../types'
+import type { PillTone } from './band'
+import type { MemoryRow } from './memory'
+
+// The app's theme keys, so light and dark themes both draw: one meaning each. Grey and ink
+// have none: grey is drawn dim, ink plain.
+const THEME: Record<PillTone, string | undefined> = {
+  green: 'success',
+  amber: 'warning',
+  blue: 'suggestion',
+  red: 'error',
+  grey: undefined,
+  ink: undefined,
+}
+
+export function themeOf(tone: PillTone): string | undefined {
+  return THEME[tone]
+}
+
+const width = (ch: string) => ((ch.codePointAt(0) ?? 0) >= 0x2e80 ? 2 : 1)
+
+// Columns a line takes in the pane, a full-width character counting 2.
+export function displayWidth(s: string): number {
+  return Array.from(s).reduce((n, ch) => n + width(ch), 0)
+}
+
+const HOUR = 3_600_000
+export const DAY = 24 * HOUR
+
+// How old a Fact is, in one short word: now, 5h, 3d, 5w; a dash when the date is unknown.
+export function age(now: number, iso: string | null): string {
+  const at = iso !== null ? Date.parse(iso) : NaN
+  if (Number.isNaN(at)) return '—'
+  const ago = now - at
+  if (ago < HOUR) return 'now'
+  if (ago < DAY) return `${Math.floor(ago / HOUR)}h`
+  if (ago < 14 * DAY) return `${Math.floor(ago / DAY)}d`
+  return `${Math.floor(ago / (7 * DAY))}w`
+}
+
+// The one light line under a Fact: who said it, how old it is, and the scope when it is not the
+// project (the usual case, so naming it on every row was noise).
+export function metaLine(fact: Fact, now: number): string {
+  const parts = [fact.said !== null ? 'Your words' : "Claude's wording"]
+  const old = age(now, fact.createdAt)
+  if (old !== '—') parts.push(old)
+  if (fact.scope !== 'project') parts.push(fact.scope === 'task' ? 'this task' : fact.scope)
+  return parts.join(' · ')
+}
+
+// What a row shows on hover: the words whole, then the older sentence it replaced.
+export function factDetail(row: MemoryRow): string[] {
+  const f = row.fact
+  const lines = [f.said !== null ? `“${f.said}”` : "Claude's wording, kept by you"]
+  if (f.replaces !== null) lines.push(`Replaced “${f.replaces}”`)
+  return lines
+}
+
+// The hot set's load, for the pane: "at 14:02" today, "1d ago" before today, the reason when it failed.
+export function hotSetNote(now: number, iso: string | null, error: string | null): { text: string; failed: boolean } | null {
+  if (error !== null) return { text: `not loaded (${error})`, failed: true }
+  const at = iso !== null ? new Date(iso) : null
+  if (at === null || Number.isNaN(at.getTime())) return null
+  if (at.toDateString() !== new Date(now).toDateString()) return { text: `${age(now, iso)} ago`, failed: false }
+  return { text: `today at ${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`, failed: false }
+}

@@ -11,8 +11,8 @@ const hudAtom = atom({ plugin: 'agentzero', key: 'hud' } as const, EMPTY_HUD as 
 const OPERATOR_ORIGINS = ['composer', 'bridge', 'sdk']
 
 const DOWNGRADE_NOTE =
-  'AgentZero plugin: the --said words were not found in what the operator typed in this session, so this was recorded as a proposal. Ask the operator.'
-const UNCHECKED = "AgentZero: the operator's words in this remember were not checked"
+  'AgentRoot plugin: the --said words were not found in what the operator typed in this session, so this was recorded as a proposal. Ask the operator.'
+const UNCHECKED = "AgentRoot: the operator's words in this remember were not checked"
 
 // The engine allows one `prompt.submit` hook per plugin without a matcher, so the one in
 // feature-hotset.ts calls this for every prompt.

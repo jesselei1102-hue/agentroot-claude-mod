@@ -22,7 +22,7 @@ from memory.graph import parse_graph
 from memory.host import command
 from memory.lifecycle import parse_entry, parse_episode, select_facts_as_of
 from memory.taskclass import TaskClass, detect
-from memory.text import RESEMBLES, resemblance, sentence_key
+from memory.text import RESEMBLES, cut_sentence, resemblance, sentence_key
 
 Group = Literal["hygiene", "consolidation", "detection"]
 
@@ -111,6 +111,8 @@ def lint_workspace(
     findings.extend(_check_graph_references(graph, facts))
     findings.extend(_check_episode_promotions(episodes, facts))
     findings.extend(_check_status_discipline(facts, episodes, graph))
+    findings.extend(_check_overtaken_proposals(facts))
+    findings.extend(_check_cut_quotes(facts))
     findings.extend(_check_skill_routability(skills))
     findings.extend(_check_skill_assets(skills))
     findings.extend(_check_fact_overlap(memory_dir))
@@ -333,6 +335,65 @@ def _check_episode_promotions(
     return findings
 
 
+def _check_cut_quotes(facts: dict[str, Any]) -> list[Finding]:
+    """An active Fact whose `said` keeps only part of a sentence the hook heard (#95)."""
+    findings: list[Finding] = []
+    for entry in facts.values():
+        if entry.status != "active" or not entry.said or not entry.heard:
+            continue
+        sentence = cut_sentence(entry.said, entry.heard)
+        if sentence is None:
+            continue
+        findings.append(
+            Finding(
+                "hygiene",
+                "said-cut",
+                entry.id,
+                f"recorded from {entry.said!r}, part of the operator's sentence {sentence!r}",
+                "ask the operator whether the Fact says what they meant; to restate it, "
+                + command(f'memory remember "<sentence>" --said "{sentence}"')
+                + (f" --fact-key {entry.fact_key}" if entry.fact_key else ""),
+            )
+        )
+    return findings
+
+
+def _check_overtaken_proposals(facts: dict[str, Any]) -> list[Finding]:
+    """A proposal left unanswered while a later active Fact took its key (SETTLED #94).
+
+    Asked to propose "每次讲清一个等号或变换及其依据", the agent did not ask the operator; it
+    recorded the operator's own words under the same key, which mean nothing out of context.
+    """
+    findings: list[Finding] = []
+    for proposal in facts.values():
+        if proposal.status != "proposed" or not proposal.fact_key:
+            continue
+        asked_at = _moment(proposal.created_at)
+        for later in facts.values():
+            later_at = _moment(later.created_at)
+            if (
+                later.status == "active"
+                and later.fact_key == proposal.fact_key
+                and asked_at is not None
+                and later_at is not None
+                and later_at > asked_at
+            ):
+                findings.append(
+                    Finding(
+                        "hygiene",
+                        "proposal-overtaken",
+                        f"{proposal.id}, {later.id}",
+                        f"the proposal {proposal.rule!r} was never answered; "
+                        f"{later.rule!r} took its key afterwards",
+                        "ask the operator: "
+                        + command(f"memory review --confirm fact:{proposal.id}")
+                        + " replaces it, or "
+                        + command(f"memory review --reject fact:{proposal.id}"),
+                    )
+                )
+    return findings
+
+
 def _check_status_discipline(
     facts: dict[str, Any], episodes: list[tuple[Path, Any]], graph: Any
 ) -> list[Finding]:
@@ -397,7 +458,7 @@ def _check_role(workspace: Path) -> list[Finding]:
                 "role-missing",
                 "Role.md",
                 "every workspace has a Role file, even when the Role is general",
-                command("adapter materialize") + " from a framework checkout",
+                command("adapter materialize"),
             )
         ]
     return []

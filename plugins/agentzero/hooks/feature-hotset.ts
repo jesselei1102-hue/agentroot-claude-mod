@@ -1,13 +1,15 @@
-import { atom, update } from 'claude-code'
+import { atom, read, update } from 'claude-code'
 import type { On } from 'claude-code'
-import type { HudState } from '../types'
+import type { HudState, PaneNote } from '../types'
 import { hintsFrom, hotSetContext, needsHotSet } from './hotset'
+import { paneNoteText } from './notes'
 import { recordOperatorPrompt, seedFromRows } from './feature-said'
 import { locateWorkspace, sessionData } from './session'
 import { EMPTY_HUD, refreshJob, type HudIo } from './snapshot'
 
 const hudAtom = atom({ plugin: 'agentzero', key: 'hud' } as const, EMPTY_HUD as HudState)
 const hotSetErrorAtom = atom({ plugin: 'agentzero', key: 'hotSetError' } as const, null as string | null)
+const paneNotesAtom = atom({ plugin: 'agentzero', key: 'paneNotes' } as const, [] as PaneNote[])
 
 const A0_TIMEOUT_MS = 10_000
 
@@ -77,11 +79,20 @@ export function registerHotSet(on: On): void {
         await update($, hotSetErrorAtom, () => null)
       } else {
         // the desktop app draws no status row, so the message also goes to a toast
-        const text = `AgentZero: hot set not loaded (${loaded.reason})`
+        const text = `AgentRoot: hot set not loaded (${loaded.reason})`
         $.ui.status(text)
         $.ui.toast(text)
         await update($, hotSetErrorAtom, () => loaded.reason)
       }
+    }
+
+    // Tell the assistant even with a fresh hot set: the old one, or a compaction summary, can
+    // still hold a Fact the operator just forgot. Drop only the entries read, not any added since.
+    const notes = await read($, paneNotesAtom)
+    const note = paneNoteText(notes)
+    if (note !== null) {
+      out = { ...out, context: [...(out.context ?? []), note] }
+      await update($, paneNotesAtom, q => q.slice(notes.length))
     }
 
     const result = await next(out)

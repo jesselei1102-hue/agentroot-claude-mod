@@ -8,7 +8,7 @@ A plugin for Claude Code. It gives the AI assistant a memory for your project. I
 
 Claude Code forgets. When you start a new conversation, the assistant does not know what you said last week.
 
-[AgentZero](https://github.com/jesselei1102-hue/agentzero) is a free tool that solves this. It keeps short notes about your project in a folder. Each note is one sentence. We call a note a **Fact**. Example: "Use pnpm in this project, never npm."
+[AgentRoot](https://github.com/jesselei1102-hue/agentzero) (formerly AgentZero) is a free tool that solves this. It keeps short notes about your project in a folder. Each note is one sentence. We call a note a **Fact**. Example: "Use pnpm in this project, never npm."
 
 A Fact is in one of two states:
 
@@ -17,7 +17,7 @@ A Fact is in one of two states:
 | **active** | You said it. The assistant uses it. |
 | **proposed** | The assistant guessed it. It waits for your yes or no. |
 
-AgentZero has two weak points:
+AgentRoot has two weak points:
 
 1. **The assistant must load the memory by itself.** It must do this at the start of a conversation. It must do it again after Claude Code shortens a long conversation. Sometimes it forgets.
 2. **The assistant must quote your exact words when it saves a Fact.** Nothing checks the quote. The assistant can make one up.
@@ -42,12 +42,13 @@ Steps:
    ```text
    /plugin install agentzero@agentzero
    ```
-3. Open your project folder in Claude Code. Set up AgentZero there:
+   The plugin and the marketplace keep the name `agentzero` from before the rename, so an existing install and its saved state carry over.
+3. Open your project folder in Claude Code. Set up AgentRoot there:
    ```text
-   /agentzero init
+   /agentroot init
    ```
-4. **Start a new conversation in the same folder.** Claude Code reads the AgentZero files only when a conversation starts.
-5. To check the setup, run `/agentzero status`.
+4. **Start a new conversation in the same folder.** Claude Code reads the AgentRoot files only when a conversation starts.
+5. To check the setup, run `/agentroot status`.
 
 Done. Work as you did before. The plugin runs by itself.
 
@@ -67,20 +68,20 @@ The plugin loads the hot set and gives it to the assistant with your message. Yo
 sequenceDiagram
     participant You
     participant Plugin
-    participant AgentZero as AgentZero (./a0)
+    participant AgentRoot as AgentRoot (./a0)
     participant Assistant
     You->>Plugin: send a message
-    Plugin->>AgentZero: get the hot set
-    AgentZero-->>Plugin: the Facts
+    Plugin->>AgentRoot: get the hot set
+    AgentRoot-->>Plugin: the Facts
     Plugin->>Assistant: your message + the Facts
     Assistant-->>You: answer that uses the Facts
 ```
 
-The step "get the hot set" takes about 100 milliseconds. If it fails, takes more than 10 seconds, or returns nothing, the plugin sends your message without it. The plugin then shows why, for example `AgentZero: hot set not loaded (exit 1)`.
+The step "get the hot set" takes about 100 milliseconds. If it fails, takes more than 10 seconds, or returns nothing, the plugin sends your message without it. The plugin then shows why, for example `AgentRoot: hot set not loaded (exit 1)`.
 
 ### 2. It checks your quotes
 
-When the assistant saves a Fact that you said, it must give your exact words. The AgentZero command for this is `./a0 memory remember "the Fact" --said "your words"`.
+When the assistant saves a Fact that you said, it must give your exact words. The AgentRoot command for this is `./a0 memory remember "the Fact" --said "your words"`.
 
 The plugin looks for those words in what you typed in this conversation. Extra spaces and line breaks do not matter.
 
@@ -111,27 +112,38 @@ Assistant:  I found a rule in the deploy note: never deploy on Fridays. Do you w
 
 Without the plugin, the second Fact would be active. The assistant would then follow a rule that you never gave.
 
-AgentZero itself can also save a Fact as proposed. It does this when the Fact says more than your words say.
+AgentRoot itself can also save a Fact as proposed. It does this when the Fact says more than your words say.
 
 To see the proposed Facts, run `./a0 memory review` in your project folder. You can then confirm or reject each one.
 
-### 3. The `/agentzero` command
+### 3. The `/agentroot` command
 
 | Command | What it does |
 |---|---|
-| `/agentzero init` | Sets up AgentZero in the current folder. It refuses your home folder, the root folder `/`, and any folder that is already, or is inside, an AgentZero project. |
-| `/agentzero upgrade` | Updates the project to the AgentZero version in this plugin. It does not overwrite a framework file that you changed. It shows what stopped it. |
-| `/agentzero status` | Shows if the project can run. Shows the plugin version and the AgentZero version. |
-| `/agentzero review` | Opens the pane of what waits for your yes (see below). |
+| `/agentroot init` | Sets up AgentRoot in the current folder. It refuses your home folder, the root folder `/`, and any folder that is already, or is inside, an AgentRoot project. |
+| `/agentroot upgrade` | Updates the project to the AgentRoot version in this plugin. It does not overwrite a framework file that you changed. It shows what stopped it. |
+| `/agentroot status` | Shows if the project can run. Shows the plugin version and the AgentRoot version. |
+| `/agentroot review` | Opens the pane of what waits for your yes (see below). |
+| `/agentroot memory` | Opens the pane of the Facts the assistant applies (see below). |
+
+`/agentzero`, the old name, still works and does the same.
 
 ### 4. You can see the memory
 
-A band above the prompt shows the state of the memory at all times:
+A band above the prompt shows the state of the memory at all times. On screen, a Fact is called a **memory**.
 
-![The memory band: 1 Fact active, 0 waiting, hot set loaded 3 hours ago, context 7% used](docs/hud/band.png)
+![The memory band: AgentRoot, using 3 of 6 memories, 2 to review, context 34%, with the Review and Memory buttons](docs/hud/band.svg)
 
-- **The band** shows how many Facts are active, how many wait for your yes, when the hot set was last loaded, and how much of the conversation space is used. When the hot set cannot be loaded, its pill turns red and says why.
-- **The pane.** When something waits, the band shows a button, `Review`. It opens a pane at the side. Each item has two buttons: `✓ Keep` and `✗ Reject`. The plugin runs AgentZero's own `review` command for you, and the band count changes.
+- **The band** reads `AgentRoot · Using 3 of 6 memories · 2 to review`, then how much of the conversation space is used. "Using 3 of 6" means that the assistant has 3 of your 6 memories in this conversation (the hot set). "2 to review" shows only when something waits for your yes. When the hot set cannot be loaded, that part turns red and says why.
+- **The Memory pane.** The band has a button, `Memory`. The pane answers one question: what does the assistant remember in this conversation, and can you trust it? At the top: how many memories are in use (`3 of 6 memories in use`), when the hot set was loaded, how many are to review, the newest one, and the last 30 days with one dot per memory. Below, every memory on one line, in three sections: `In use now`, `Saved, not in use` and `Forgotten`. Under each sentence, the card says who wrote it: `Your words` when you said it, `Claude's wording` when the assistant wrote it and you kept it. Then its age, `this task` when it holds only for the current task, and `Updated` when it replaced an older one. Point at a row to see your words, the older sentence it replaced, and `Forget`. The plugin runs AgentRoot's own `forget` command; nothing is deleted, and `↺ Restore` brings it back until the pane closes. In the desktop app the pane is drawn in the app's light or dark colours, and `Forget` and `Restore` are outlined pills (red and blue). The terminal shows the figures as text (`IN USE ▰▰▰▱▱ 3/6   TO REVIEW 2`) and every row's details.
+
+  ![The Memory pane: 3 of 6 memories in use, then the sections In use now, Saved not in use and Forgotten, with Forget on a hovered row and Restore on a forgotten one](docs/hud/memory-pane.svg)
+
+- **The Review pane.** When something waits, the band shows a button, `Review`. The items are listed under `To review`. Each item has two buttons, `✓ Keep` and `Reject`: outlined pills (green and grey) in the desktop app, plain text in the terminal. The plugin runs AgentRoot's own `review` command for you, and the band count changes.
+
+  ![The Review pane: 2 to review, each with Keep and Reject, and 1 kept under Done](docs/hud/review-pane.svg)
+
+- **The assistant is told.** When you keep, reject or forget something in a pane, the plugin tells the assistant with your next message. It does not keep using a Fact you removed.
 - **The cards.** When the assistant writes to the memory, the command shows as a card: green when a Fact is saved with your words, amber when it waits for your yes, blue when the assistant uses a skill.
 
 ## Limits
@@ -139,11 +151,10 @@ A band above the prompt shows the state of the memory at all times:
 - **Claude Code only.** Codex and Cursor do not use this plugin.
 - **A shortened quote passes the check.** The check proves that the words are yours. It does not prove that they are all of your words.
 - **The plugin reads one form of the command.** The form is: an optional `cd <folder> &&`, then `./a0 memory remember ...` (or `python -m memory remember ...`). The values must be plain text in quotes. The only options it reads are `--said`, `--fact-key`, `--scope`, `--tag`, and `--source-run`. For any other form, the command runs as written. You see this message: `the operator's words in this remember were not checked`.
-- **A repeated task is found only if it calls an MCP tool.** A **Skill** is a saved procedure for one kind of task. An **MCP tool** is a tool from a server you connect to Claude Code. AgentZero finds a task that came back by comparing the MCP tools each run called. A task that calls none, such as writing notes with files and the shell, never looks repeated, so AgentZero does not offer a Skill for that reason. The assistant does offer a Skill in two cases (tested): when you say a task is to be done this way every time, and after it writes a script that turns a batch of files into what you asked for.
+- **A repeated task is found only if it calls an MCP tool.** A **Skill** is a saved procedure for one kind of task. An **MCP tool** is a tool from a server you connect to Claude Code. AgentRoot finds a task that came back by comparing the MCP tools each run called. A task that calls none, such as writing notes with files and the shell, never looks repeated, so AgentRoot does not offer a Skill for that reason. The assistant does offer a Skill in two cases (tested): when you say a task is to be done this way every time, and after it writes a script that turns a batch of files into what you asked for.
 - **The desktop app shows the status line small, next to the model name.** So every plugin message also shows as a short pop-up (a toast).
 - **In the desktop app, the cards do not always show.** The desktop app folds each run of commands into one line ("Ran a command"). A card for a skill shows; a card for a saved Fact often stays hidden in the fold. The band and the pane show the same state. In the terminal, the cards show in the tests; this is not yet checked by hand.
-- **The band, the pane and the cards use colours for the light theme.**
-- **Not tested yet:** Windows. Terminal and VS Code (the desktop app is tested). A first install on a computer that never had AgentZero.
+- **Not tested yet:** Windows. Terminal and VS Code (the desktop app is tested). A first install on a computer that never had AgentRoot.
 - **The plugin uses an early-access Claude Code feature (function hooks).** It can change between Claude Code versions. We tested on versions 2.1.280 and 2.1.289 (terminal) and 2.1.286 (desktop app).
 
 ## For developers
@@ -155,14 +166,15 @@ How the repository is organised:
 plugins/agentzero/
   hooks/                          the plugin code (TypeScript) and its tests
   tools/snapshot.py               prints the memory state as JSON for the band, the pane and the cards
-  kernel/                         a pinned copy of AgentZero (Python)
+  kernel/                         a pinned copy of AgentRoot (Python)
                                   SOURCE.json: its commit and the hash of each file
-scripts/sync_kernel.py            copies one AgentZero commit into kernel/
+scripts/sync_kernel.py            copies one AgentRoot commit into kernel/
+scripts/render_hud.ts             draws the HUD figures in docs/hud/ with the plugin's own drawing code (bun scripts/render_hud.ts)
 tests/                            Python tests: the copy script, and kernel/ against SOURCE.json
 docs/                             the designs (spec.md, hud-spec.md), what was tested (verify.md), and how to write tests (test-kit.md)
 ```
 
-The plugin does not rewrite AgentZero. It runs the copy in `kernel/`. A test compares each file in `kernel/` with its hash. So the copy is exactly AgentZero. The plugin code is about 1,500 lines.
+The plugin does not rewrite AgentRoot. It runs the copy in `kernel/`. A test compares each file in `kernel/` with its hash. So the copy is exactly AgentRoot. The plugin code is about 1,500 lines.
 
 To try a change in the desktop app: commit it, raise `version` in `plugins/agentzero/.claude-plugin/plugin.json`, run `claude plugin update agentzero@agentzero --scope local` in the project where the plugin is installed, then quit and reopen the app. The desktop app runs the copy that the update command makes. The terminal reads the folder directly.
 
@@ -173,14 +185,14 @@ claude plugin test plugins/agentzero    # the plugin code
 python3 -m pytest                       # the copy script and kernel/
 ```
 
-To use a new AgentZero version:
+To use a new AgentRoot version:
 
 ```bash
-python3 scripts/sync_kernel.py <path to AgentZero> --ref <tag> --denylist <file>
+python3 scripts/sync_kernel.py <path to AgentRoot> --ref <tag> --denylist <file>
 ```
 
 Then release a new plugin version. See [CHANGELOG.md](./CHANGELOG.md) and [DECISIONS.md](./DECISIONS.md).
 
 ## License
 
-MIT. `kernel/LICENSE` is the license of AgentZero.
+MIT. `kernel/LICENSE` is the license of AgentRoot.

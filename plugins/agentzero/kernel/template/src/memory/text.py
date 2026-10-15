@@ -134,3 +134,65 @@ def legacy_slug(text: str) -> str:
     if ascii_part:
         return ascii_part
     return "x-" + hashlib.sha1(text.strip().encode("utf-8")).hexdigest()[:8]
+
+
+_SENTENCE_END = "。！？!?；;\n"  # noqa: RUF001 - the operator writes Chinese
+_HEARD_MAX = 500
+_FILLER_MAX = 3
+"""Characters left of a sentence that can be dropped as filler (a "好的" before a comma)."""
+
+
+def _flat(text: str) -> str:
+    return " ".join(text.split())
+
+
+def _bigrams(text: str) -> set[str]:
+    squeezed = "".join(text.casefold().split())
+    return {squeezed[i:i + 2] for i in range(len(squeezed) - 1)}
+
+
+def heard_for(said: str, heard: str | None) -> str | None:
+    """The operator's message to keep beside `said`, or None.
+
+    Kept only when `said` came from it (most of its character pairs are in it) and
+    differs from it: a quote from an earlier turn must not be stored beside an
+    unrelated "好的". Capped, so a pasted document is not copied into Memory.
+    """
+    if not heard or not said.strip():
+        return None
+    said_flat, heard_flat = _flat(said), _flat(heard)
+    if said_flat == heard_flat:
+        return None
+    pairs = _bigrams(said_flat)
+    if not pairs or len(pairs & _bigrams(heard_flat)) / len(pairs) < 0.5:
+        return None
+    return heard_flat[:_HEARD_MAX]
+
+
+def cut_sentence(said: str, heard: str | None) -> str | None:
+    """The operator's sentence `said` was cut out of, or None when it was not cut.
+
+    Structural, with no word list: `said` sits inside `heard` but starts or ends
+    inside a sentence, and what it leaves of that sentence is more than filler.
+    "我看不过来", taken from the sentence that began "你不要一次过给我太多内容", is cut;
+    a whole sentence picked from a longer message is not (SETTLED #95).
+    """
+    if not heard:
+        return None
+    said_flat, heard_flat = _flat(said).strip(), _flat(heard)
+    start = heard_flat.find(said_flat)
+    if not said_flat or start < 0:
+        return None
+    end = start + len(said_flat)
+    head = heard_flat[:start]
+    tail = heard_flat[end:]
+    sentence_start = max(head.rfind(mark) for mark in _SENTENCE_END) + 1
+    ends = [tail.find(mark) for mark in _SENTENCE_END if tail.find(mark) >= 0]
+    sentence_end = end + (min(ends) if ends else len(tail))
+    sentence = heard_flat[sentence_start:sentence_end].strip()
+    dropped = (heard_flat[sentence_start:start] + heard_flat[end:sentence_end]).strip()
+    content = "".join(char for char in dropped if char.isalnum())
+    if len(content) <= _FILLER_MAX:
+        return None
+    return sentence
+

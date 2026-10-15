@@ -16,7 +16,7 @@ test('hintsFrom cuts at 200 code points and flattens lines', () => {
 
 test('hotSetContext puts the two exact lines first', () => {
   const lines = hotSetContext('## Facts (1)', '2026-10-04 10:00').split('\n')
-  expect(lines[0]).toBe('AgentZero hot set, loaded by the Claude Code plugin at 2026-10-04 10:00.')
+  expect(lines[0]).toBe('AgentRoot hot set, loaded by the Claude Code plugin at 2026-10-04 10:00.')
   expect(lines[1]).toBe(
     'Rule 3 is done for this session: do not run hot-set again unless your context is compacted or cleared.',
   )

@@ -3,13 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "agentzero"
-version = "0.4.7"
-description = "Agent Learning Convention Layer — System prompt and file organization conventions for self-learning agents"
+name = "agentroot"
+version = "0.5.0"
+description = "One memory for every coding agent: plain-file project memory shared by Claude Code, Codex and Cursor"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
-authors = [{ name = "AgentZero Contributors" }]
+authors = [{ name = "AgentRoot Contributors" }]
 keywords = ["agent", "llm", "mcp", "skill", "convention", "self-learning"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -31,8 +31,29 @@ dev = [
     "types-pyyaml>=6,<7",
 ]
 
+[project.scripts]
+agentroot = "adapter.__main__:main"
+# The old name, kept so the fix hints an existing workspace still prints keep working.
+agentzero = "adapter.__main__:legacy_main"
+
 [tool.hatch.build.targets.wheel]
-packages = ["src/score", "src/traces", "src/memory", "src/skills", "src/adapter"]
+packages = [
+    "src/knowledge",
+    "src/score",
+    "src/traces",
+    "src/memory",
+    "src/skills",
+    "src/adapter",
+]
+
+# What `init` and `materialize` read from a framework checkout, laid out the same way,
+# so an installed package stands and upgrades a workspace with no clone (adapter/framework.py).
+[tool.hatch.build.targets.wheel.force-include]
+"pyproject.toml" = "adapter/_framework/pyproject.toml"
+"template" = "adapter/_framework/template"
+"template/src" = "adapter/_framework/src"
+"a0" = "adapter/_framework/a0"
+"a0.cmd" = "adapter/_framework/a0.cmd"
 
 [tool.ruff]
 target-version = "py311"

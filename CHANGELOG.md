@@ -1,5 +1,54 @@
 # Changelog
 
+## 1.4.0-rc.1 — kernel AgentRoot 0.5.0 (c27880a)
+
+- **AgentRoot.** The product is now called AgentRoot, after the kernel's rename. The HUD, the command's replies, the toasts and the notes to the assistant say AgentRoot; the command is `/agentroot`, and `/agentzero` still works as its old name. The plugin id, the marketplace name and the saved state keep the name `agentzero`, so `/plugin install agentzero@agentzero` and existing installs carry on unchanged.
+- **The instrument HUD** (`docs/instrument-hud-spec.md`). The Memory pane answers "what does the assistant remember now, and can I trust it?": the figures at the top (memories in use, to review, the newest, a 30-day timeline), drawn as SVG in the app's light or dark colours; every Fact on one line under `In use now`, `Saved, not in use` or `Forgotten`, with its source, age, scope and `Updated` when it replaced an older one; your words, the replaced sentence and `Forget` on hover. In the desktop app the panes and the band are drawn whole as SVG cards, with the app's own buttons laid over them as outlined pills: `Forget` red, `Restore` blue, `✓ Keep` green, `Reject` grey. The Review pane and the band use the same figures. The terminal draws text gauges and shows every row's details.
+- **Plain words.** The band reads `Using 3 of 6 memories · 2 to review` (1.3 said `active` and `waiting`). On screen a Fact is a memory; the Review pane lists items under `To review`; a card says `Your words` or `Claude's wording` (it said `inferred`). The "your words" gauge is gone: each card already says whose words it holds.
+- The snapshot gives each Fact its `factKey` and the sentence of the retired Fact it replaced.
+- **Kernel: AgentRoot 0.5.0.** AgentZero's command is now `agentroot` (the plugin runs the kernel as `python -m adapter`, so nothing changes here). Also from 0.4.8–0.4.9: an unanswered proposal under the same key is brought back, and a Fact keeps the operator's message as the hook recorded it.
+- Tests: the 2.1.295 test kit wants a value from `ui.status` and `ui.toast` hooks.
+
+## 1.3.0-rc.7 — kernel 0.4.7 (333cd6e)
+
+- Back to rc.5's rows (rc.6's one-line tags and button read worse; reverted). A Fact's words in the Memory pane are cut at 48 width units (Chinese counting 2) with "…": the desktop app does not wrap a long Chinese line in a pane and cut it at the edge.
+
+## 1.3.0-rc.5 — kernel 0.4.7 (333cd6e)
+
+- `Forget` acts on one press; there is no confirmation step, since `Restore` undoes it. In the desktop app every press in a pane after the first takes two clicks (the engine retires the drawing's buttons with a redraw the app does not receive; reported upstream), so each step saved is a double click saved.
+- rc.4's hidden stamp is removed: it did not help.
+
+## 1.3.0-rc.4 — kernel 0.4.7 (333cd6e)
+
+- **Restore.** A Fact forgotten in the Memory pane shows `Restore` until the pane closes. It runs `tools/restore.py`, which sets the Fact's status back to active through the kernel's own entry writer: same id, words and dates. It refuses when a newer Fact with the same fact-key has replaced it since. The assistant is told "Restored, apply again"; a forget restored before the next message is simply not mentioned. (A forget also unlinks the Fact from `graph.yaml`; Restore does not relink it.)
+
+## 1.3.0-rc.3 — kernel 0.4.7 (333cd6e)
+
+- The panes' buttons are plain text buttons again (`✓ Keep`, `✗ Reject`, `Forget`, `✗ Forget`, `Cancel`). A bordered button takes the keyboard when clicked; the redraw after the press removes it, the keyboard falls back to the composer, and the next click into the pane went only to taking the keyboard back ("ui_press not handled" in the app's log). rc.3 of 1.2 had plain buttons and took one click.
+
+## 1.3.0-rc.2 — kernel 0.4.7 (333cd6e)
+
+- Each item in the Review and Memory panes is one column: the sentence, the words (or provenance), then the date and tags, then the buttons. Laid out side by side, a long quote pushed the row wider than the pane and the `Forget` button out of sight (lab, 2026-10-08).
+
+## 1.3.0-rc.1 — kernel 0.4.7 (333cd6e)
+
+- **The HUD is drawn with the app's own components.** The band, the Review and Memory panes and the cards use the app's text, borders and buttons instead of SVG images, so they take the app's font, sizes and theme. Colour is a theme key and means one thing each: amber waits for you, red failed or is being confirmed, green saved, blue in the hot set or a skill. The band loses its black name pill and the ring; "0 waiting" is no longer shown. Sentences wrap in full in the panes. See `docs/native-ui-spec.md`.
+- A long quote on a card is cut at 60 characters, so "✓ checked" stays on the line.
+
+## 1.2.0-rc.3 — kernel 0.4.7 (333cd6e)
+
+- The Memory and Review panes open with the keyboard. In the desktop app the first click into a pane moves the keyboard there; that redraw retires the pane's buttons, so the click's press ran nothing ("ui_press not handled" in the app's log) and every button took two clicks. rc.2's refresh after `Forget` and `Cancel` did not help and is removed.
+
+## 1.2.0-rc.2 — kernel 0.4.7 (333cd6e)
+
+- `Forget` and `Cancel` in the Memory pane work on the first click. The desktop app drew a write of the pane's own state one press late, so each needed two clicks; they now refresh the snapshot as `✗ Forget` and the Review pane's buttons do.
+
+## 1.2.0-rc.1 — kernel 0.4.7 (333cd6e)
+
+- **The Memory pane.** `Memory` on the band, or `/agentzero memory`, opens a pane of the active Facts, newest first: each with the operator's words (or "Inferred by the assistant, kept by you"), the date, and tags for the hot set and for task scope. `Forget`, then `✗ Forget` to confirm, runs the kernel's `memory forget`; a forgotten Fact stays listed, struck through, until the pane closes, and a Skill that cites it is named.
+- **The assistant is told.** After a forget in the Memory pane, or a keep or reject in the Review pane, the next message carries a note to the assistant (not shown to the operator) listing what changed. The note is sent even when that message loads a fresh hot set, because the earlier hot set or a compaction summary can still hold the forgotten Fact.
+- `tools/snapshot.py` adds the list of active Facts; the band's active count is its length.
+
 ## 1.1.0-rc.4 — kernel 0.4.7 (333cd6e)
 
 - The band, the pane and the cards are in English (they were in Chinese). Text is cut and wrapped by display width, so English and Chinese both fit.

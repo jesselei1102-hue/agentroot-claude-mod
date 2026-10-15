@@ -1,5 +1,4 @@
 import { expect, test } from 'claude-code/testing'
-import { textWidth } from './svg'
 import { a0Command, cardForBash, cardForCall, cardForRead, groupCard, isMemoryWrite } from './cards'
 
 const R = './a0 memory remember "Use pnpm, never npm" --said "Use pnpm in this project, never npm."'
@@ -99,7 +98,8 @@ test('a long quote is cut inside the quotes, keeping ✓ checked', () => {
   const said = 'Use pnpm in this project for every install, every script, every CI job and every deploy, never npm.'
   const card = cardForBash(`./a0 memory remember "Use pnpm" --said "${said}"`, 'remembered: a — Use pnpm\n', undefined)
   expect(card?.detail?.endsWith('…” ✓ checked')).toBe(true)
-  expect(textWidth(card?.detail ?? '', 12.5) <= 564).toBe(true)
+  const quote = /“(.*)”/.exec(card?.detail ?? '')?.[1] ?? ''
+  expect(Array.from(quote).length).toBe(60)
 })
 
 test('a shell read of a skill file is a skill card', () => {
@@ -114,7 +114,7 @@ test('a shell read of a skill file is a skill card', () => {
   expect(cardForCall(call('ls skills/builtin/analyze.md'), '/w', none)).toBeNull()
 })
 
-test('groupCard draws an AgentZero call from the start', () => {
+test('groupCard draws an AgentRoot call from the start', () => {
   const base = { tool: 'Bash', input: { command: R }, isRunning: false, isErrored: false, isInterrupted: false }
   const none = new Map()
   expect(groupCard({ ...base, isRunning: true }, '/w', none)).toEqual({ icon: '⏳', label: 'Recording', tone: 'grey', title: 'Use pnpm, never npm', detail: null, outline: false })

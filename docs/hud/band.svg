@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="751" height="60" viewBox="0 0 751 60"><rect x="0.5" y="0.5" width="750" height="59" rx="14" class="bg hair-s" stroke-width="1"/><svg x="20" y="16" width="521" height="28" viewBox="0 0 521 28"><style>
+text{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, sans-serif;font-variant-numeric:tabular-nums}
+.ink{fill:#16171a}.ink2{fill:#3a3c42}.mute{fill:#8a8d95}.faint{fill:#c4c6cc}
+.over{fill:#8a8d95;font-weight:600;letter-spacing:.09em}
+.hair{fill:#eceef1}.hair-s{stroke:#eceef1}.faint-s{stroke:#c4c6cc}.tint{fill:#f6f7f9}.bg{fill:#ffffff}
+.blue{fill:#3366f0}.blue-s{stroke:#3366f0}.blue-t{fill:#eaf0ff}
+.amber{fill:#e09a1f}.amber-t{fill:#fff1d6}.green{fill:#1f9d61}.red{fill:#d4493b}.claude{fill:#d97757}
+.cell{fill:#eceef1}.cell.on{fill:#3366f0}
+.rail{fill:#e3e5e9}.rail.on{fill:#3366f0}.rail.amber{fill:#e09a1f}.rail.green{fill:#1f9d61}.rail.red{fill:#d4493b}
+@media (prefers-color-scheme: dark){
+.ink{fill:#f1f2f4}.ink2{fill:#c9cbd0}.mute,.over{fill:#8d9099}.faint{fill:#4a4c53}
+.hair,.cell,.rail{fill:#2e3035}.hair-s{stroke:#2e3035}.faint-s{stroke:#4a4c53}.tint{fill:#24262a}.bg{fill:#1c1d20}
+.blue,.cell.on,.rail.on{fill:#7fa2ff}.blue-s{stroke:#7fa2ff}.blue-t{fill:#23304f}
+.amber,.rail.amber{fill:#f2b34a}.amber-t{fill:#3a2f1c}.green,.rail.green{fill:#4cc98c}.red,.rail.red{fill:#f07a6e}
+}
+</style><rect x="2" y="9" width="9" height="9" rx="1.5" transform="rotate(45 6.5 13.5)" class="claude"/><text x="18" y="19" class="ink" font-size="13" font-weight="650">AgentRoot</text><circle cx="109.53" cy="14.5" r="4" class="blue"/><text x="118.53" y="19" class="blue" font-size="13" font-weight="500">Using 3 of 6 memories</text><circle cx="279.93" cy="14.5" r="7" class="amber-t"/><circle cx="279.93" cy="14.5" r="3.5" class="amber"/><text x="289.93" y="19" class="amber" font-size="13" font-weight="500">2 to review</text><rect x="379.12" y="12" width="56" height="5" rx="2.5" class="hair"/><rect x="379.12" y="12" width="19.04" height="5" rx="2.5" class="blue"/><text x="443.12" y="19" class="mute" font-size="12.5">context 34%</text></svg><rect x="576" y="17" width="70" height="26" rx="13" fill="#d97757" stroke="#d97757" stroke-width="1.5"/><text x="611" y="34.5" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, sans-serif" font-size="12.5" font-weight="500" text-anchor="middle" class="" fill="#ffffff">Review</text><rect x="656" y="17" width="75" height="26" rx="13" fill="none" stroke="#c4c6cc" stroke-width="1.5"/><text x="693.5" y="34.5" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, sans-serif" font-size="12.5" font-weight="500" text-anchor="middle" class="ink">Memory</text></svg>

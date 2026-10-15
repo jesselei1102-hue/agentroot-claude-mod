@@ -24,7 +24,7 @@ test('first prompt attaches the hot set with hints', async ($, on) => {
   const ctx = lastContext(w) ?? []
   expect(ctx.length).toBe(1)
   expect(ctx[0].endsWith('\n' + HOT.trimEnd())).toBe(true)
-  expect(ctx[0].startsWith('AgentZero hot set, loaded by the Claude Code plugin at ')).toBe(true)
+  expect(ctx[0].startsWith('AgentRoot hot set, loaded by the Claude Code plugin at ')).toBe(true)
   expect(ctx[0].split('\n')[1]).toBe(hotSetContext('x', 't').split('\n')[1])
   expect(w.runs.length).toBe(1)
   expect(w.runs[0].argv).toEqual(['/w/a0', 'memory', 'hot-set', '--scope', 'project', '--hints', 'hello there'])
@@ -87,8 +87,8 @@ test('a0 fails: nothing attached and the status says why', async ($, on) => {
   w.setRun({ exitCode: 1, stdout: '' })
   await $.prompt.submit(PROMPT('one'))
   expect(lastContext(w)).toBeUndefined()
-  expect(w.statuses).toEqual(['AgentZero: hot set not loaded (exit 1)'])
-  expect(w.toasts).toEqual(['AgentZero: hot set not loaded (exit 1)'])
+  expect(w.statuses).toEqual(['AgentRoot: hot set not loaded (exit 1)'])
+  expect(w.toasts).toEqual(['AgentRoot: hot set not loaded (exit 1)'])
 })
 
 test('a0 times out: status says timed out', async ($, on) => {
@@ -97,7 +97,7 @@ test('a0 times out: status says timed out', async ($, on) => {
   w.setRun(new Error('timed out after 10000 ms'))
   await $.prompt.submit(PROMPT('one'))
   expect(lastContext(w)).toBeUndefined()
-  expect(w.statuses).toEqual(['AgentZero: hot set not loaded (timed out)'])
+  expect(w.statuses).toEqual(['AgentRoot: hot set not loaded (timed out)'])
 })
 
 test('a0 prints nothing: status says no output', async ($, on) => {
@@ -106,7 +106,7 @@ test('a0 prints nothing: status says no output', async ($, on) => {
   w.setRun({ exitCode: 0, stdout: '  \n' })
   await $.prompt.submit(PROMPT('one'))
   expect(lastContext(w)).toBeUndefined()
-  expect(w.statuses).toEqual(['AgentZero: hot set not loaded (no output)'])
+  expect(w.statuses).toEqual(['AgentRoot: hot set not loaded (no output)'])
 })
 
 test('a0 missing: status says a0 not found, and nothing is run', async ($, on) => {
@@ -114,7 +114,7 @@ test('a0 missing: status says a0 not found, and nothing is run', async ($, on) =
   w.existing.delete('/w/a0')
   await $.session.start(START)
   await $.prompt.submit(PROMPT('one'))
-  expect(w.statuses).toEqual(['AgentZero: hot set not loaded (a0 not found)'])
+  expect(w.statuses).toEqual(['AgentRoot: hot set not loaded (a0 not found)'])
   expect(w.runs.length).toBe(0)
 })
 

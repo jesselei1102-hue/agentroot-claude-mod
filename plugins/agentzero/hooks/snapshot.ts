@@ -1,4 +1,4 @@
-import type { HudState, PendingItem, Snapshot } from '../types'
+import type { Fact, HudState, PendingItem, Snapshot } from '../types'
 import { findPython } from './python'
 
 export const SNAPSHOT_TIMEOUT_MS = 2_000
@@ -31,7 +31,41 @@ function pendingItem(v: unknown): PendingItem | null {
   const o = v as Record<string, unknown>
   if (![o.id, o.kind, o.sentence, o.provenance].every(isStr)) return null
   if (o.createdAt !== null && !isStr(o.createdAt)) return null
+  // absent in snapshots from before 1.4: read as null
+  const factKey = o.factKey ?? null
+  const replaces = o.replaces ?? null
+  if ((factKey !== null && !isStr(factKey)) || (replaces !== null && !isStr(replaces))) return null
   return { id: o.id as string, kind: o.kind as string, sentence: o.sentence as string, provenance: o.provenance as string, createdAt: o.createdAt as string | null }
+}
+
+function fact(v: unknown): Fact | null {
+  if (typeof v !== 'object' || v === null) return null
+  const o = v as Record<string, unknown>
+  if (![o.id, o.sentence, o.author, o.scope].every(isStr) || typeof o.inHotSet !== 'boolean') return null
+  if (o.said !== null && !isStr(o.said)) return null
+  if (o.createdAt !== null && !isStr(o.createdAt)) return null
+  // absent in snapshots from before 1.4: read as null
+  const factKey = o.factKey ?? null
+  const replaces = o.replaces ?? null
+  if ((factKey !== null && !isStr(factKey)) || (replaces !== null && !isStr(replaces))) return null
+  return {
+    id: o.id as string,
+    sentence: o.sentence as string,
+    said: o.said as string | null,
+    author: o.author as string,
+    createdAt: o.createdAt as string | null,
+    scope: o.scope as string,
+    inHotSet: o.inHotSet,
+    factKey: factKey as string | null,
+    replaces: replaces as string | null,
+  }
+}
+
+// A list that cannot be read is null, not empty, and does not fail the rest of the snapshot.
+function facts(v: unknown): Fact[] | null {
+  if (!Array.isArray(v)) return null
+  const list = v.map(fact)
+  return list.some(f => f === null) ? null : (list as Fact[])
 }
 
 export function parseSnapshot(stdout: string): SnapshotResult {
@@ -56,11 +90,32 @@ export function parseSnapshot(stdout: string): SnapshotResult {
     if (!Array.isArray(h.factIds) || !h.factIds.every(isStr)) return UNREADABLE
     hotSet = { at: h.at as string | null, factIds: h.factIds as string[] }
   }
-  return { ok: true, snapshot: { active: o.active, pending: pending as PendingItem[], hotSet } }
+  return { ok: true, snapshot: { active: o.active, pending: pending as PendingItem[], hotSet, facts: facts(o.facts) } }
 }
 
 function firstLine(text: string): string {
   return text.split('\n').map(l => l.trim()).find(l => l !== '') ?? ''
+}
+
+// Runs one of the plugin's tools/ scripts with the workspace's Python, as the snapshot runs.
+export async function runTool(
+  io: Pick<HudIo, 'run' | 'read' | 'pluginRoot'>,
+  workspace: string,
+  script: string,
+  args: string[],
+  timeoutMs: number,
+): Promise<RunResult | Error> {
+  const python = (await cachedPython(io, workspace)) ?? (await searchPython(io, workspace))
+  if (python === null) return new Error(NO_PYTHON)
+  try {
+    return await io.run([python, `${io.pluginRoot}/tools/${script}`, workspace, ...args], {
+      cwd: workspace,
+      env: { PYTHONPATH: `${workspace}/src` },
+      timeoutMs,
+    })
+  } catch (err) {
+    return err instanceof Error ? err : new Error(String(err))
+  }
 }
 
 const pythons = new Map<string, string>()
@@ -117,7 +172,7 @@ export function nextHud(prev: HudState, result: SnapshotResult): HudState {
 }
 
 export function statusAfter(prev: HudState, result: SnapshotResult): string | undefined | null {
-  if (!result.ok) return `AgentZero: memory unreadable (${result.error})`
+  if (!result.ok) return `AgentRoot: memory unreadable (${result.error})`
   return prev.error !== null ? undefined : null
 }
 
