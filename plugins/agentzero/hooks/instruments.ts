@@ -155,7 +155,8 @@ export function reviewCluster(f: { waiting: number; done: number }, columns: num
   const done = f.done > 0
     ? `<circle cx="${n2(half + 16)}" cy="44" r="7" class="green-f"/>`
     : `<circle cx="${n2(half + 16)}" cy="44" r="7" class="off-f"/>`
-  return svg(width, 80, 'row',
+  // no note line under the figures, so the drawing ends under them (operator's screenshot, 2026-10-15)
+  return svg(width, 62, 'row',
     waitingCell(0, half, false, f.waiting) +
     done + text(half + 34, 28, 'lbl', 'DONE') + text(half + 34, 52, 'fig', String(f.done)))
 }
