@@ -1,162 +1,151 @@
-# agentzero-claude-mod
+# AgentRoot for Claude Code
 
 [English](./README.md) | **简体中文**
 
-这是 Claude Code 的一个插件。它让 AI 助手记住你的项目。它还会检查这份记忆是否正确。
+**一句话：让 Claude 记住你说过的话，而且只把你真说过的话当成你的话。**
 
-## 问题
+![记忆提示条：AgentRoot，6 条记忆用着 3 条，2 条待确认，上下文 34%，右边是 Review 和 Memory 按钮](docs/hud/band.svg)
 
-Claude Code 会忘事。你开一个新对话，助手就不知道你上周说过什么。
+## 30 秒看懂
 
-[AgentRoot](https://github.com/jesselei1102-hue/agentzero)（原名 AgentZero）是一个免费工具，用来解决这个问题。它把关于你项目的短笔记存在一个文件夹里。每条笔记是一句话。我们把一条笔记叫作 **Fact**（事实）。例如：“这个项目用 pnpm，不要用 npm。”
+把 Claude 想成一位很能干、但每开一次新对话就失忆的同事。
 
-一条 Fact 有两种状态：
+[AgentRoot](https://github.com/jesselei1102-hue/agentzero)（原名 AgentZero）给这位同事一本**笔记本**，记下你项目里的规矩，一条一句话。比如：“这个项目用 pnpm，不要用 npm。”
 
-| 状态 | 含义 |
+笔记本有了，还剩两个麻烦。这个插件把它们补上：
+
+| 麻烦 | 插件怎么办 |
 |---|---|
-| **active**（已生效） | 你说过。助手会使用它。 |
-| **proposed**（待确认） | 助手猜的。它要等你说“是”或“不是”。 |
+| 😶 **他常常忘了翻笔记本。** | 每到关键时刻，插件替他翻开，把和你这句话最相关的几条放到他面前。 |
+| 🤥 **他可能往本子里写你没说过的话，还说是你说的。** | 插件核对原话：你真说过，才记成“你的话”；没说过，就先放进“待你确认”。 |
+| 🙈 **你看不见本子里写了什么。** | 输入框上方有一条提示条，点一下就能看全部记忆，记错的随手划掉。 |
 
-AgentRoot 有两个薄弱点：
+## 你要做什么？几乎什么都不用做
 
-1. **助手必须自己加载记忆。** 对话开始时要加载。Claude Code 把长对话缩短之后，要再加载一次。助手有时会忘。
-2. **助手保存 Fact 时，必须引用你的原话。** 没有东西检查这句引用。助手可以编一句。
+| 什么时候 | 你做什么 |
+|---|---|
+| 平常 | 照常和 Claude 说话。插件自己运行。 |
+| 提示条上出现 `2 to review` | 点 `Review`，每条点 `✓ Keep`（保留）或 `Reject`（不要）。 |
+| 想知道 Claude 记得什么 | 点 `Memory`。 |
+| 发现一条记错了 | 鼠标指向它，点 `Forget`。不会真的删掉，面板关掉之前点 `↺ Restore` 就能找回来。 |
 
-这个插件解决这两个问题。
+你在面板里做的改动，插件会在你下一条消息时告诉 Claude，它不会再用你划掉的那条。
 
-## 安装
+## 安装（约 5 分钟）
 
-你需要：
+先准备好：
 
-- **Claude Code**（[获取方法](https://code.claude.com/docs)）。
-- **Python 3.11 或更高版本**，并装有 PyYAML 包。检查版本，运行 `python3 --version`。安装 PyYAML，运行 `python3 -m pip install pyyaml`。
-- **macOS 或 Linux。** Windows 没有测试过。
+- **Claude Code**（[获取方法](https://code.claude.com/docs)）
+- **Python 3.11 或更高版本**，装好 PyYAML。查版本：`python3 --version`；装 PyYAML：`python3 -m pip install pyyaml`
+- **macOS 或 Linux**（Windows 还没测试过）
 
-步骤：
+然后在 Claude Code 里依次输入：
 
-1. 在 Claude Code 里添加这个插件市场。插件市场就是一份插件列表。
+1. 添加插件市场（就是一份插件列表）：
    ```text
    /plugin marketplace add jesselei1102-hue/agentzero-claude-mod
    ```
-2. 安装插件。Claude Code 问你范围时，选最小的（project 或 local）。这样插件只在你选的项目里工作。
+2. 安装插件。问你范围时，选最小的（project 或 local），插件就只在这个项目里工作：
    ```text
    /plugin install agentzero@agentzero
    ```
-   插件和插件市场沿用改名前的名字 `agentzero`，所以已有的安装和保存的状态都能照常使用。
-3. 在 Claude Code 里打开你的项目文件夹。在这里设置 AgentRoot：
+   插件的名字还是改名前的 `agentzero`，所以以前装过的人什么都不用改。
+3. 打开你的项目文件夹，在这里建好笔记本：
    ```text
    /agentroot init
    ```
-4. **在同一个文件夹里开一个新对话。** Claude Code 只在对话开始时读取 AgentRoot 的文件。
-5. 检查设置，运行 `/agentroot status`。
+4. **在同一个文件夹里开一个新对话。** Claude Code 只在对话开始时读取这些文件。
+5. 想确认装好了，输入 `/agentroot status`。
 
-完成。你照常工作就行。插件会自己运行。
-
-## 插件做什么
-
-### 1. 它替你加载记忆
-
-**hot set** 是一份短清单，列出和你这条消息最相关的 Fact。助手回答之前必须先读 hot set。
-
-插件加载 hot set，并把它和你的消息一起交给助手。你看不到它。插件在这些时候这样做：
-
-- 你发出一个对话的第一条消息时；
-- `/compact`（缩短对话）或 `/clear`（开始新对话）之后的第一条消息；
-- 过了六小时之后的第一条消息。
-
-```mermaid
-sequenceDiagram
-    participant 你
-    participant 插件
-    participant AgentRoot as AgentRoot (./a0)
-    participant 助手
-    你->>插件: 发送消息
-    插件->>AgentRoot: 获取 hot set
-    AgentRoot-->>插件: 相关的 Fact
-    插件->>助手: 你的消息 + 这些 Fact
-    助手-->>你: 用到这些 Fact 的回答
-```
-
-“获取 hot set”这一步约需 100 毫秒。如果它失败、超过 10 秒或没有返回内容，插件就不带 hot set 发送你的消息。然后插件会说明原因，例如 `AgentRoot: hot set not loaded (exit 1)`。
-
-### 2. 它检查你的引用
-
-助手保存一条“你说过”的 Fact 时，必须给出你的原话。AgentRoot 里对应的命令是 `./a0 memory remember "这条 Fact" --said "你的原话"`。
-
-插件会在你本次对话输入的内容里找这些话。多余的空格和换行不影响结果。
-
-```mermaid
-flowchart LR
-    A["助手保存一条 Fact<br/>并引用你的话"] --> B{"这些话在你<br/>输入的内容里吗？"}
-    B -- 在 --> C["Fact 保存为 active"]
-    B -- 不在 --> D["Fact 保存为 proposed<br/>等你确认"]
-```
-
-例子：
+## 看一个例子
 
 ```text
 你：      这个项目用 pnpm，不要用 npm。npm 会破坏我们的锁文件。
 
-助手：    ./a0 memory remember "用 pnpm，不用 npm" --said "这个项目用 pnpm，不要用 npm。"
-插件：    这些话在你的消息里。命令照常运行。Fact 是 active。
-          下周开新对话，助手仍然会用 pnpm。
+Claude：  （记下“用 pnpm，不用 npm”，并引用你的原话）
+插件：    ✓ 这句话你确实说过。直接生效。
+          下周开新对话，Claude 仍然会用 pnpm。
 
-后来，助手读到仓库里的一份部署说明，自己定了一条规则。
+后来，Claude 读到一份部署说明，想记下“周五不部署”，还说这是你说的。
 
-助手：    ./a0 memory remember "周五不部署" --said "我们周五从不部署。"
-插件：    你从没输入过这些话。插件把命令改成 "memory propose fact"。
-          Fact 保存为 proposed。插件告诉助手：“去问操作者。”
-          编出来的引用不会被保存。
-助手：    我在部署说明里看到一条规则：周五不部署。要我保留它吗？
+插件：    ✗ 你从没说过这句话。不让它冒充你的话，改成“待确认”。
+Claude：  我在部署说明里看到一条规则：周五不部署。要我保留它吗？
 ```
 
-没有这个插件，第二条 Fact 会是 active。助手就会遵守一条你从没给过的规则。
+没有这个插件，Claude 会把一条你从没定过的规则当成你的要求来遵守。
 
-AgentRoot 自己也可能把 Fact 保存为 proposed。当 Fact 说的比你的原话多时，它会这样做。
+```mermaid
+flowchart LR
+    A["Claude 想记下一条<br/>并说是你说的"] --> B{"你真的<br/>说过这句话吗？"}
+    B -- 说过 --> C["直接生效"]
+    B -- 没说过 --> D["先放进“待确认”<br/>等你点头"]
+```
 
-要查看 proposed 的 Fact，在项目文件夹里运行 `./a0 memory review`。你可以逐条确认或拒绝。
+另外，就算引用是真的，只要 Claude 写下的比你的原话说得更多，AgentRoot 也会先放进“待确认”。
 
-### 3. `/agentroot` 命令
+## 屏幕上的字是什么意思
+
+界面上的字是英文。对照表：
+
+| 你看到的 | 意思 |
+|---|---|
+| `Using 3 of 6 memories` | 你一共存了 6 条记忆，这次对话里 Claude 正在用和当前话题最相关的 3 条。 |
+| `2 to review` | 有 2 条等你点头。没有待确认的时候不显示。 |
+| `context 34%` | 这次对话的容量用了 34%。快满时 Claude Code 会压缩对话，压缩之后插件会把记忆重新递给 Claude。 |
+| 红色的 `hot set not loaded (…)` | 这一次没能把记忆递给 Claude，括号里写着原因。你的消息照常发出。 |
+| `In use now` / `Saved, not in use` / `Forgotten` | 正在用 / 存着但这次没用 / 已划掉 |
+| `Your words` | 这条有你的原话为证。 |
+| `Claude's wording` | 这条是 Claude 写的，你确认后保留了。 |
+| `this task` · `Updated` | 只对当前这个任务有效 · 这条替换了旧的一条 |
+
+**记忆面板**（点 `Memory`）：顶部是数字，下面每条记忆一行。鼠标指向一行，能看到你的原话和 `Forget`。
+
+![记忆面板：6 条记忆有 3 条在用，下面分成 In use now、Saved, not in use 和 Forgotten 三组，指向的一行有 Forget，忘掉的一行有 Restore](docs/hud/memory-pane.svg)
+
+**待确认面板**（点 `Review`）：每条都有 `✓ Keep` 和 `Reject`。
+
+![待确认面板：2 条待确认，每条有 Keep 和 Reject，Done 下有 1 条已保留](docs/hud/review-pane.svg)
+
+Claude 写入记忆时，聊天里还会出现一张小卡片：绿色是用你的原话记下了，黄色是在等你确认，蓝色是 Claude 用了一个保存好的做法（Skill）。
+
+## 插件什么时候把记忆递给 Claude
+
+- 每个对话的第一条消息；
+- `/compact`（压缩对话）或 `/clear`（清空重来）之后的第一条消息；
+- 隔了六小时之后的第一条消息。
+
+这一步约 0.1 秒，你看不到它。如果失败或超过 10 秒，消息照常发出，提示条会写明原因。
+
+## 命令
 
 | 命令 | 作用 |
 |---|---|
-| `/agentroot init` | 在当前文件夹设置 AgentRoot。它会拒绝你的主目录、根目录 `/`，以及已经是（或位于）AgentRoot 项目里的文件夹。 |
-| `/agentroot upgrade` | 把项目更新到本插件自带的 AgentRoot 版本。它不会覆盖你改过的框架文件。被拦下时，它会显示原因。 |
-| `/agentroot status` | 显示项目能不能运行。显示插件版本和 AgentRoot 版本。 |
-| `/agentroot review` | 打开待确认面板（见下文）。 |
-| `/agentroot memory` | 打开助手正在遵守的 Fact 列表（见下文）。 |
+| `/agentroot init` | 在当前文件夹建好笔记本。不会在你的主目录、根目录 `/`，或已有笔记本的文件夹里建。 |
+| `/agentroot status` | 检查能不能正常运行，显示版本。 |
+| `/agentroot review` | 打开待确认面板。 |
+| `/agentroot memory` | 打开记忆面板。 |
+| `/agentroot upgrade` | 把笔记本更新到插件自带的 AgentRoot 版本。你改过的文件不会被覆盖。 |
 
 旧名字 `/agentzero` 仍然可用，作用相同。
 
-### 4. 记忆看得见
+## 目前的限制
 
-输入框上方有一条提示条，一直显示记忆的状态。界面上把 Fact 叫作 **memory**（记忆）。
+- **只支持 Claude Code**，Codex 和 Cursor 用不了。
+- **截短的引用也能通过检查。** 检查只能证明这些话是你说的，不能证明是你说的全部。
+- **还没测试：** Windows；终端和 VS Code（桌面 app 已测试）；在从没用过 AgentRoot 的电脑上第一次安装。
+- **在桌面 app 里，小卡片不一定看得到**：app 会把连续的命令折叠成一行。提示条和面板显示的是同样的信息。
+- **插件用了 Claude Code 的一个抢先体验功能**（function hooks），以后的 Claude Code 版本可能会变。
 
-![记忆提示条：AgentRoot，6 条记忆用着 3 条，2 条待确认，上下文 34%，右边是 Review 和 Memory 按钮](docs/hud/band.svg)
+<details>
+<summary>更多技术细节</summary>
 
-- **提示条**显示 `AgentRoot · Using 3 of 6 memories · 2 to review`，后面是对话空间用了多少。“Using 3 of 6”表示你的 6 条记忆里，助手在这次对话中用着 3 条（即 hot set）。“2 to review”（2 条待确认）只在有东西等你确认时出现。hot set 加载失败时，那一格变红，并写明原因。
-- **记忆面板。** 提示条上有 `Memory` 按钮。这个面板回答一个问题：助手在这次对话里记得什么，能不能信？顶部显示：几条记忆在用（`3 of 6 memories in use`）、hot set 什么时候加载的、几条待确认、最新的一条，以及最近 30 天（一条记忆一个点）。下面每条记忆一行，分成三组：`In use now`（正在用）、`Saved, not in use`（已保存，没在用）和 `Forgotten`（已忘掉）。每句话下面，卡片写明是谁的措辞：`Your words`（你的原话）表示你说过；`Claude's wording`（Claude 的措辞）表示助手写的、你保留了。然后是多久以前、只对当前任务有效时的 `this task`，以及替换了旧的一条时的 `Updated`。鼠标指向一行，显示你的原话、被替换的旧句子和 `Forget`。插件替你运行 AgentRoot 自己的 `forget` 命令；不会真的删除，面板关掉之前按 `↺ Restore` 可以恢复。桌面 app 里面板按 app 的浅色或深色主题绘制，`Forget` 和 `Restore` 是带边框的圆角按钮（红色和蓝色）。终端里数字显示成文字（`IN USE ▰▰▰▱▱ 3/6   TO REVIEW 2`），每行的详情直接显示。
+- **插件只认一种写法的保存命令：** 可选的 `cd <文件夹> &&`，然后是 `./a0 memory remember ...`（或 `python -m memory remember ...`）。值必须是带引号的普通文字，只读 `--said`、`--fact-key`、`--scope`、`--tag`、`--source-run` 这几个选项。其他写法照原样运行，你会看到：`the operator's words in this remember were not checked`（这条 remember 里的话没有核对）。
+- **只有调用了 MCP 工具的任务，才会被发现是重复的。** **Skill** 是为一类任务保存下来的做法；**MCP 工具**是你接入 Claude Code 的服务器提供的工具。AgentRoot 靠比较每次运行用了哪些 MCP 工具来发现重复的任务。只用文件和命令行的任务永远不会被看成重复。助手在两种情况下仍会提议做成 Skill（已测试）：你说一类任务以后每次都这样做；它写了一个脚本，把一批文件变成你要的结果。
+- **桌面 app 的状态栏很小**，在模型名旁边，所以插件的每条消息也会以短暂弹出的提示（toast）显示。
+- **测试过的版本：** Claude Code 2.1.280、2.1.289（终端）和 2.1.286（桌面 app）。
+- **名词对照：** 文档里的 **Fact** 就是界面上的 memory（记忆）；**active** 是已生效，**proposed** 是待确认；**hot set** 是每次递给 Claude 的那几条最相关的记忆。
 
-  ![记忆面板：6 条记忆有 3 条在用，下面分成 In use now、Saved, not in use 和 Forgotten 三组，指向的一行有 Forget，忘掉的一行有 Restore](docs/hud/memory-pane.svg)
-
-- **待确认面板。** 有东西等你确认时，提示条上会出现 `Review` 按钮。待确认的条目列在 `To review` 下。每一条都有两个按钮：`✓ Keep`（保留）和 `Reject`（拒绝）；桌面 app 里是带边框的圆角按钮（绿色和灰色），终端里是普通文字。插件替你运行 AgentRoot 自己的 `review` 命令，提示条的数字随之变化。
-
-  ![待确认面板：2 条待确认，每条有 Keep 和 Reject，Done 下有 1 条已保留](docs/hud/review-pane.svg)
-
-- **助手会知道。** 你在面板里保留、拒绝或忘掉一条，插件会在你下一条消息里告诉助手。你删掉的 Fact，它不会继续用。
-- 提示条、面板和卡片上的文字都是英文。
-- **卡片。** 助手写入记忆时，这条命令会显示成一张卡片：用你的原话记下的 Fact 是绿色，等你确认的是黄色，助手使用技能时是蓝色。
-
-## 限制
-
-- **只支持 Claude Code。** Codex 和 Cursor 不使用这个插件。
-- **截短的引用能通过检查。** 检查只能证明这些话是你说的，不能证明它们是你说的全部。
-- **插件只读一种命令写法。** 写法是：可选的 `cd <文件夹> &&`，然后是 `./a0 memory remember ...`（或 `python -m memory remember ...`）。值必须是带引号的普通文字。它只读这几个选项：`--said`、`--fact-key`、`--scope`、`--tag`、`--source-run`。其他写法，命令照原样运行。你会看到这条消息：`the operator's words in this remember were not checked`（这条 remember 里的话没有核对）。
-- **只有调用了 MCP 工具的任务，才能被发现是重复的。** **Skill** 是为一类任务保存下来的做法。**MCP 工具**是你接入 Claude Code 的服务器提供的工具。AgentRoot 比较每次运行调用了哪些 MCP 工具，以此发现又出现了的任务。一个任务如果不调用 MCP 工具，比如只用文件和命令行写笔记，就永远不会被看成重复，所以 AgentRoot 不会因为重复而提议做成 Skill。助手在两种情况下仍会提议做成 Skill（已测试）：你说一类任务以后每次都这样做；它写了一个脚本，把一批文件变成你要的结果。
-- **桌面 app 的状态栏很小，在模型名旁边。** 所以插件的每条消息也会以短暂弹出的提示（toast）显示。
-- **在桌面 app 里，卡片不一定显示。** 桌面 app 会把每次连续运行的命令折叠成一行（“Ran a command”）。技能卡片会显示；记下 Fact 的卡片常常藏在折叠里。提示条和面板显示的是同样的状态。在终端里，卡片在测试中会显示，还没有手工确认。
-- **还没测试：** Windows；终端和 VS Code（桌面 app 已测试）；在从没用过 AgentRoot 的电脑上首次安装。
-- **插件使用 Claude Code 的一个抢先体验功能（function hooks）。** 它在不同的 Claude Code 版本之间可能会变。我们在 2.1.280 版、2.1.289 版（终端）和 2.1.286 版（桌面 app）上测试过。
+</details>
 
 ## 给开发者
 
