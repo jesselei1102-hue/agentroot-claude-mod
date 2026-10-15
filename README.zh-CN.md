@@ -10,7 +10,7 @@
 
 把 Claude 想成一位很能干、但每开一次新对话就失忆的同事。
 
-[AgentRoot](https://github.com/jesselei1102-hue/agentzero)（原名 AgentZero）给这位同事一本**笔记本**，记下你项目里的规矩，一条一句话。比如：“这个项目用 pnpm，不要用 npm。”
+**[AgentRoot]**给这位同事一本**笔记本**，记下你项目里的规矩，一条一句话。比如：“这个项目用 pnpm，不要用 npm。”
 
 笔记本有了，还剩两个麻烦。这个插件把它们补上：
 
