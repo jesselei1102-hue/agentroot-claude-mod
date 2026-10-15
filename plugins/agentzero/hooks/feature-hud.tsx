@@ -109,7 +109,8 @@ export function registerHud(on: On): void {
       await data.gate.run(refreshJob(io, workspace))
     }
     // Plain buttons: a bordered one takes the keyboard, and the redraw after a press then loses the next click.
-    return reviewPane($.ui.resolve(e) as unknown as Els, { rows, open, done }, { decide })
+    const ctx: ViewCtx = { surface: e.surface, columns: e.props.bodyColumns, now: await $.clock.now() }
+    return reviewPane($.ui.resolve(e) as unknown as Els, { rows, open, done }, { decide }, ctx)
   })
 
   on('ui.render', { component: 'Pane', requestId: MEMORY_PANE }, async ($, e) => {

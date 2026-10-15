@@ -4,6 +4,9 @@ import { PROMPT, SNAPSHOT, START, world } from './test-world'
 const BAND = { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 120, scroll: { offset: 0, bodyRows: 10 }, view: {} }
 const PANE = { title: 'AgentZero · Review', isFocused: false, bodyColumns: 60, placement: 'dock' as const, scroll: { offset: 0, bodyRows: 30 }, view: {} }
 const EMPTY = JSON.stringify({ ...SNAPSHOT, pending: [] })
+const F = (id: string, inHotSet: boolean, said: string | null) =>
+  ({ id, sentence: id, said, author: 'human', createdAt: '2026-10-06T10:17:00.000+08:00', scope: 'project', inHotSet })
+const FACTS = [F('fact:x', true, 'x'), F('fact:y', false, 'y'), F('fact:z', false, null)]
 
 async function bandText(ui: { findAll: (q: { type: string }) => Promise<{ text?: string }[]> }) {
   return (await ui.findAll({ type: 'Text' })).map(t => String(t.text ?? '')).join('')
@@ -14,15 +17,21 @@ for (const surface of ['desktop', 'terminal'] as const) {
     world(on)
     await $.session.start(START)
     const ui = await $.ui.mount({ plugin: 'agentzero', surface, component: 'AbovePrompt', props: BAND })
-    expect(await bandText(ui)).toBe(`◆AgentZero3 active1 waitinghot set ${await hotSetAgo(ui)}▰▰▰▱▱▱▱▱context 41%`)
-    expect((await ui.find({ type: 'Text', text: '1 waiting' }))?.props.color).toBe('warning')
+    expect(await bandText(ui)).toBe('◆AgentZero3 active◉ 1 waiting▰▰▰▱▱▱▱▱context 41%')
+    expect((await ui.find({ type: 'Text', text: '◉ 1 waiting' }))?.props.color).toBe('warning')
     expect(await ui.find({ type: 'Svg' })).toBeUndefined()
   })
 }
 
-// the fixture's hot-set time is fixed and the test clock is not, so read the relative part back
-async function hotSetAgo(ui: { find: (q: { type: string; text: RegExp }) => Promise<{ text?: string } | undefined> }) {
-  return String((await ui.find({ type: 'Text', text: /^hot set / }))?.text ?? '').slice('hot set '.length)
+for (const surface of ['desktop', 'terminal'] as const) {
+  test(`the band shows loaded and yours from the Facts on ${surface}`, async ($, on) => {
+    const w = world(on)
+    w.snapshotJson = JSON.stringify({ ...SNAPSHOT, facts: FACTS })
+    await $.session.start(START)
+    const ui = await $.ui.mount({ plugin: 'agentzero', surface, component: 'AbovePrompt', props: BAND })
+    expect(await bandText(ui)).toBe('◆AgentZero● 1/3 loaded❝ 2/3 yours◉ 1 waiting▰▰▰▱▱▱▱▱context 41%')
+    expect((await ui.find({ type: 'Text', text: '● 1/3 loaded' }))?.props.color).toBe('suggestion')
+  })
 }
 
 test('the review button opens the pane and refreshes', async ($, on) => {
@@ -95,11 +104,11 @@ test('the pane lists what waits, with keep and reject', async ($, on) => {
   world(on)
   await $.session.start(START)
   const ui = await mountPane($)
-  expect(await ui.find({ type: 'Svg' })).toBeUndefined()
-  expect(await bandText(ui)).toContain('Waiting1Done0Waiting for you · 1')
-  expect(await ui.find({ text: 'Fact' })).toBeDefined()
+  expect(String((await ui.find({ type: 'Svg' }))?.props.source)).toContain('WAITING')
+  expect(await bandText(ui)).toContain('WAITING FOR YOU · 1')
+  expect((await ui.findAll({ type: 'Box' })).some((b: any) => b.props.display === 'none')).toBe(false)
   expect(await ui.find({ text: '周五不部署' })).toBeDefined()
-  expect(await ui.find({ text: 'agent proposed it · Oct 4' })).toBeDefined()
+  expect(await bandText(ui)).toContain('Fact · agent proposed it · ')
   expect(await ui.find({ key: 'az-keep-fact:a' })).toBeDefined()
   expect(await ui.find({ key: 'az-reject-fact:a' })).toBeDefined()
 })
@@ -112,8 +121,8 @@ test('keep runs the kernel and marks the item kept', async ($, on) => {
   w.snapshotJson = EMPTY
   await ui.press({ key: 'az-keep-fact:a' })
   expect(w.runs.at(-1)).toEqual({ argv: ['/w/a0', 'memory', 'review', '--confirm', 'fact:a'], init: { cwd: '/w', timeoutMs: 10000 } })
-  expect(await bandText(ui)).toContain('Waiting0Done1Done · 1')
-  expect((await ui.find({ type: 'Text', text: 'Kept' }))?.props.color).toBe('success')
+  expect(await bandText(ui)).toContain('DONE · 1')
+  expect((await ui.find({ type: 'Text', text: '✓' }))?.props.color).toBe('success')
   expect(await ui.find({ key: 'az-keep-fact:a' })).toBeUndefined()
 })
 
@@ -155,4 +164,12 @@ test('the line beside the Review buttons shrinks', async ($, on) => {
   const ui = await mountPane($)
   const shrinking = (await ui.findAll({ type: 'Box' })).filter((b: any) => b.props.flexShrink === 1 && b.props.minWidth === 0)
   expect(shrinking.length > 0).toBe(true)
+})
+
+test('the Review pane on terminal draws no SVG', async ($, on) => {
+  world(on)
+  await $.session.start(START)
+  const ui = await $.ui.mount({ plugin: 'agentzero', surface: 'terminal', component: 'Pane', props: PANE, requestId: 'agentzero-review' })
+  expect(await ui.find({ type: 'Svg' })).toBeUndefined()
+  expect(await bandText(ui)).toContain('WAITING 1')
 })

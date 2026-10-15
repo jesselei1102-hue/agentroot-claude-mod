@@ -1,9 +1,9 @@
 import type { Fact, PendingItem } from '../types'
 import type { BandModel, PillTone } from './band'
 import type { MemoryRow } from './memory'
-import { columnsToPx, memoryCluster, textGauge, type MemoryFigures } from './instruments'
+import { columnsToPx, memoryCluster, reviewCluster, textGauge, type MemoryFigures } from './instruments'
 import { KIND_LABEL, type PaneRow } from './pane'
-import { DAY, age, columnsInline, displayWidth, factDetail, reviewMeta, sourceChip, themeOf } from './view'
+import { DAY, age, columnsInline, displayWidth, factDetail, sourceChip, themeOf } from './view'
 
 // The HUD's trees, from plain data: no `$` here, so a preview mod can draw them with fixtures.
 // The layout follows the mods people like to look at: a row of figures on top, sections with a
@@ -24,22 +24,6 @@ export function toned(tone: PillTone): Record<string, unknown> {
   return tone === 'grey' ? { dimColor: true } : {}
 }
 
-type Stat = { label: string; value: number; tone: PillTone }
-
-// Figures in small boxes, side by side, each as wide as the others.
-function stats({ Box, Text }: Els, items: Stat[]) {
-  return (
-    <Box flexDirection="row" gap={1}>
-      {items.map(s => (
-        <Box key={`az-stat-${s.label}`} borderStyle="round" borderDimColor={true} paddingX={1} flexDirection="column" flexGrow={1}>
-          <Text dimColor={true}>{s.label}</Text>
-          <Text bold={true} {...toned(s.tone)}>{String(s.value)}</Text>
-        </Box>
-      ))}
-    </Box>
-  )
-}
-
 function section({ Box, Text }: Els, title: string, count: number, note: string | null = null) {
   return (
     <Box flexDirection="row" marginTop={1} justifyContent="space-between">
@@ -53,28 +37,6 @@ function section({ Box, Text }: Els, title: string, count: number, note: string 
 }
 
 type Mark = { glyph: string; tone: PillTone }
-
-// One row: the mark in a narrow column, then the sentence; under it a dim line and, at its
-// right, the row's buttons. The dim line shrinks and is cut at its end, so a long line never
-// pushes the buttons out of the pane.
-function row(els: Els, mark: Mark, sentence: string, struck: boolean, meta: unknown, actions: unknown, extra: unknown[]) {
-  const { Box, Text } = els
-  return (
-    <Box flexDirection="row" gap={1}>
-      <Box width={2} flexShrink={0}>
-        <Text {...toned(mark.tone)}>{mark.glyph}</Text>
-      </Box>
-      <Box flexDirection="column" flexGrow={1} flexShrink={1} minWidth={0}>
-        <Text strikethrough={struck} dimColor={struck}>{sentence}</Text>
-        <Box flexDirection="row" gap={2} alignItems="center">
-          <Box flexGrow={1} flexShrink={1} minWidth={0}>{meta}</Box>
-          {actions}
-        </Box>
-        {extra}
-      </Box>
-    </Box>
-  )
-}
 
 export type MemoryView = {
   rows: MemoryRow[]
@@ -211,39 +173,56 @@ function reviewMark(r: PaneRow): Mark {
   return { glyph: '○', tone: 'amber' }
 }
 
-function reviewRow(els: Els, r: PaneRow, act: ReviewActions) {
+function reviewRow(els: Els, r: PaneRow, act: ReviewActions, ctx: ViewCtx) {
   const { Box, Text, Button } = els
   const rejected = r.state === 'rejected'
+  const mark = reviewMark(r)
   const kind = KIND_LABEL[r.item.kind] ?? r.item.kind
-  const meta = <Text dimColor={true} wrap="truncate-end">{`${kind} · ${reviewMeta(r.item)}`}</Text>
-  const actions = r.actionable && (
-    <Box flexDirection="row" gap={2} flexShrink={0}>
-      <Button key={`az-keep-${r.item.id}`} label="✓ Keep" plain={true} onPress={() => act.decide(r.item, 'keep')} />
-      <Button key={`az-reject-${r.item.id}`} label="✗ Reject" plain={true} dimColor={true} onPress={() => act.decide(r.item, 'reject')} />
+  const meta = `${kind} · ${r.item.provenance} · ${age(ctx.now, r.item.createdAt)}`
+  return (
+    <Box key={`az-item-${r.item.id}`} flexDirection="column">
+      <Box flexDirection="row" gap={1} alignItems="center">
+        <Box width={2} flexShrink={0}>
+          <Text {...toned(mark.tone)}>{mark.glyph}</Text>
+        </Box>
+        <Box flexGrow={1} flexShrink={1} minWidth={0}>
+          <Text wrap="truncate-end" strikethrough={rejected} dimColor={rejected}>{r.item.sentence}</Text>
+        </Box>
+        {r.actionable && (
+          <Box flexDirection="row" gap={2} flexShrink={0}>
+            <Button key={`az-keep-${r.item.id}`} label="✓ Keep" plain={true} onPress={() => act.decide(r.item, 'keep')} />
+            <Button key={`az-reject-${r.item.id}`} label="✗ Reject" plain={true} dimColor={true} onPress={() => act.decide(r.item, 'reject')} />
+          </Box>
+        )}
+      </Box>
+      <Box paddingLeft={3} flexShrink={1} minWidth={0}>
+        <Text dimColor={true} wrap="truncate-end">{meta}</Text>
+      </Box>
+      {r.state === 'failed' && <Box paddingLeft={3}><Text color="error">{r.message ?? ''}</Text></Box>}
     </Box>
   )
-  const extra = [
-    r.state === 'kept' ? <Text color="success">Kept</Text> : null,
-    rejected ? <Text dimColor={true}>Rejected</Text> : null,
-    r.state === 'failed' ? <Text color="error">{r.message ?? ''}</Text> : null,
-  ]
-  return row(els, reviewMark(r), r.item.sentence, rejected, meta, actions, extra)
 }
 
-export function reviewPane(els: Els, v: ReviewView, act: ReviewActions) {
+function reviewInstruments(els: Els, v: ReviewView, ctx: ViewCtx) {
+  if (drawsSvg(els, ctx)) {
+    const Svg = els.Svg!
+    return <Svg source={reviewCluster({ waiting: v.open, done: v.done }, ctx.columns)} alt={`${v.open} waiting, ${v.done} done`} isInteractive={true} width={columnsToPx(ctx.columns)} />
+  }
+  const { Text } = els
+  return <Text dimColor={true}>{`WAITING ${v.open}   DONE ${v.done}`}</Text>
+}
+
+export function reviewPane(els: Els, v: ReviewView, act: ReviewActions, ctx: ViewCtx) {
   const { Box, Text } = els
   const waiting = v.rows.filter(r => r.actionable)
   const done = v.rows.filter(r => !r.actionable)
   return (
     <Box flexDirection="column" gap={1}>
-      {stats(els, [
-        { label: 'Waiting', value: v.open, tone: v.open > 0 ? 'amber' : 'grey' },
-        { label: 'Done', value: v.done, tone: v.done > 0 ? 'green' : 'grey' },
-      ])}
-      {waiting.length > 0 && section(els, 'Waiting for you', waiting.length)}
-      {waiting.map(r => reviewRow(els, r, act))}
-      {done.length > 0 && section(els, 'Done', done.length)}
-      {done.map(r => reviewRow(els, r, act))}
+      {reviewInstruments(els, v, ctx)}
+      {waiting.length > 0 && section(els, 'WAITING FOR YOU', waiting.length)}
+      {waiting.map(r => reviewRow(els, r, act, ctx))}
+      {done.length > 0 && section(els, 'DONE', done.length)}
+      {done.map(r => reviewRow(els, r, act, ctx))}
       {v.rows.length === 0 && <Text color="success">Nothing is waiting for you ✓</Text>}
     </Box>
   )
