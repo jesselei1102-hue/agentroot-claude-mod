@@ -31,7 +31,7 @@ test('paneResult and reviewArgv', () => {
   expect(reviewArgv('/w', 'reject', 'fact:a')).toEqual(['/w/a0', 'memory', 'review', '--reject', 'fact:a'])
   expect(reviewArgv('/w', 'keep', 'fact:a')).toEqual(['/w/a0', 'memory', 'review', '--confirm', 'fact:a'])
   expect([KIND_LABEL.fact, KIND_LABEL.edge, KIND_LABEL.skill]).toEqual(['Fact', 'Edge', 'Skill'])
-  expect([REVIEW_PANE, REVIEW_TITLE]).toEqual(['agentzero-review', 'AgentZero · Review'])
+  expect([REVIEW_PANE, REVIEW_TITLE]).toEqual(['agentzero-review', 'AgentRoot · Review'])
 })
 
 test('a failed press on an item no longer waiting stays listed with its error', () => {

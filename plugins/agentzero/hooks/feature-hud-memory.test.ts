@@ -1,7 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 import { PROMPT, SNAPSHOT, START, world } from './test-world'
 
-const PANE = { title: 'AgentZero · Memory', isFocused: false, bodyColumns: 140, placement: 'dock' as const, scroll: { offset: 0, bodyRows: 30 }, view: {} }
+const PANE = { title: 'AgentRoot · Memory', isFocused: false, bodyColumns: 140, placement: 'dock' as const, scroll: { offset: 0, bodyRows: 30 }, view: {} }
 const A = { id: 'fact:a', sentence: 'Never deploy on Fridays.', said: '周五别部署', author: 'human', createdAt: '2026-10-06T10:17:00.000+08:00', scope: 'project', inHotSet: true }
 const B = { id: 'fact:b', sentence: 'Deploys go out on Tuesdays.', said: null, author: 'agent', createdAt: '2026-10-03T14:30:00.000+08:00', scope: 'project', inHotSet: false }
 const json = (facts: unknown) => JSON.stringify({ ...SNAPSHOT, facts })
@@ -25,20 +25,20 @@ async function hoverBoxes(ui: any) {
 }
 
 
-test('/agentzero memory opens the pane', async ($, on) => {
+test('/agentroot memory opens the pane', async ($, on) => {
   const w = world(on)
   await $.session.start(START)
   const before = w.snapshotRuns.length
   const out = await $.command.run({ command: 'agentzero', args: 'memory' })
-  expect(out.text).toBe('Opened the AgentZero memory pane.')
+  expect(out.text).toBe('Opened the AgentRoot memory pane.')
   expect(w.opened).toEqual(['agentzero-memory'])
   expect(w.snapshotRuns.length).toBe(before + 1)
 })
 
-test('/agentzero memory outside a workspace opens nothing', async ($, on) => {
+test('/agentroot memory outside a workspace opens nothing', async ($, on) => {
   const w = world(on, { existing: [] })
   const out = await $.command.run({ command: 'agentzero', args: 'memory' })
-  expect(out.text).toContain('not inside an AgentZero workspace')
+  expect(out.text).toContain('not inside an AgentRoot workspace')
   expect(w.opened).toEqual([])
 })
 
@@ -175,7 +175,7 @@ test('the pane with no snapshot or no workspace', async ($, on) => {
 
 test('the pane outside a workspace', async ($, on) => {
   world(on, { existing: [] })
-  expect(await (await mount($)).find({ text: 'This is not an AgentZero workspace.' })).toBeDefined()
+  expect(await (await mount($)).find({ text: 'This is not an AgentRoot workspace.' })).toBeDefined()
 })
 
 // A click into a pane gives it the keyboard; that redraw retires the button handles, so the
@@ -201,7 +201,7 @@ test('every button in both panes is plain', async ($, on) => {
   w.snapshotJson = JSON.stringify({ ...SNAPSHOT, facts: [A, B] })
   await $.session.start(START)
   const memory = await mount($)
-  const review = await $.ui.mount({ plugin: 'agentzero', surface: 'desktop', component: 'Pane', props: { ...PANE, title: 'AgentZero · Review' }, requestId: 'agentzero-review' })
+  const review = await $.ui.mount({ plugin: 'agentzero', surface: 'desktop', component: 'Pane', props: { ...PANE, title: 'AgentRoot · Review' }, requestId: 'agentzero-review' })
   const buttons = [...(await memory.findAll({ type: 'Button' })), ...(await review.findAll({ type: 'Button' }))]
   expect(buttons.length).toBe(4)
   for (const b of buttons) expect([b.props.key, b.props.plain]).toEqual([b.props.key, true])

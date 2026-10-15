@@ -1,11 +1,11 @@
 import { expect, test } from 'claude-code/testing'
 import { MSG, PROMPT, SNAPSHOT, START, world } from './test-world'
 
-const MEMORY = { title: 'AgentZero · Memory', isFocused: false, bodyColumns: 60, placement: 'dock' as const, scroll: { offset: 0, bodyRows: 30 }, view: {} }
-const REVIEW = { ...MEMORY, title: 'AgentZero · Review' }
+const MEMORY = { title: 'AgentRoot · Memory', isFocused: false, bodyColumns: 60, placement: 'dock' as const, scroll: { offset: 0, bodyRows: 30 }, view: {} }
+const REVIEW = { ...MEMORY, title: 'AgentRoot · Review' }
 const A = { id: 'fact:x', sentence: 'Never deploy on Fridays.', said: '周五别部署', author: 'human', createdAt: '2026-10-06T10:17:00.000+08:00', scope: 'project', inHotSet: true }
-const NOTE = 'AgentZero: since your last message'
-const HOT = 'AgentZero hot set, loaded by the Claude Code plugin'
+const NOTE = 'AgentRoot: since your last message'
+const HOT = 'AgentRoot hot set, loaded by the Claude Code plugin'
 
 // The kernel as the tests need it: hot-set prints a hot set; forget and review answer `answer`.
 function kernel(w: ReturnType<typeof world>, answer: { exitCode: number; stdout?: string; stderr?: string }) {

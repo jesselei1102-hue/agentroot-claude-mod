@@ -2,7 +2,7 @@ import type { PaneResult, PaneResults, PendingItem } from '../types'
 import type { RunResult } from './snapshot'
 
 export const REVIEW_PANE = 'agentzero-review'
-export const REVIEW_TITLE = 'AgentZero · Review'
+export const REVIEW_TITLE = 'AgentRoot · Review'
 
 export type PaneItemState = 'open' | 'kept' | 'rejected' | 'failed'
 // actionable: the item still waits, so keep and reject can still be pressed.

@@ -21,7 +21,7 @@ test('band pills: memories in use, and what is to review', () => {
   expect(m.pills.map(p => p.tone)).toEqual(['blue', 'amber'])
   expect(m.ring).toEqual({ percent: 41, tone: 'blue', note: null })
   expect(m.showReview).toBe(true)
-  expect(m.alt).toBe('AgentZero memory: using 1 of 3 memories, 2 to review')
+  expect(m.alt).toBe('AgentRoot memory: using 1 of 3 memories, 2 to review')
 })
 
 test('band states', () => {
@@ -35,7 +35,7 @@ test('band states', () => {
   expect(bandModel(hud(3, 1), null, undefined, NOW).ring).toBeNull()
   const failed = bandModel({ snapshot: null, error: 'timed out', stale: false }, null, 41, NOW)
   expect(failed.pills.map(p => p.text)).toEqual(['memory unreadable'])
-  expect(failed.alt).toBe('AgentZero memory: state unknown')
+  expect(failed.alt).toBe('AgentRoot memory: state unknown')
   expect(failed.showReview).toBe(false)
   expect(bandModel({ snapshot: null, error: null, stale: false }, null, 41, NOW).pills[0]).toEqual({ text: 'reading memory…', tone: 'grey' })
 })

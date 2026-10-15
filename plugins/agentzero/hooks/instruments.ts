@@ -291,8 +291,8 @@ export function bandSvg(b: BandData, maxW: number): Drawing {
   let x = 0
   let s = `<rect x="2" y="${y - 10}" width="9" height="9" rx="1.5" transform="rotate(45 6.5 ${y - 5.5})" class="claude"/>`
   x += 18
-  s += text(x, y, 'AgentZero', { cls: 'ink', size: 13, weight: 650 })
-  x += textWidth('AgentZero', 13) * 1.05 + 16
+  s += text(x, y, 'AgentRoot', { cls: 'ink', size: 13, weight: 650 })
+  x += textWidth('AgentRoot', 13) * 1.05 + 16
   if (b.failed !== null) {
     const msg = `hot set not loaded (${b.failed})`
     s += `<circle cx="${n2(x + 4)}" cy="${y - 4.5}" r="4" class="red"/>` + text(x + 13, y, msg, { cls: 'red', size: 13 })

@@ -120,7 +120,7 @@ export function cardForRead(filePath: string, workspace: string): Card | null {
   return skill(name)
 }
 
-// Agents often read a skill through the shell (AgentZero #92): `cat skills/builtin/analyze.md`.
+// Agents often read a skill through the shell (AgentRoot #92): `cat skills/builtin/analyze.md`.
 const READ_VERB = /(^|[\s;&|(])(cat|head|tail|less|more|sed|bat)\s/
 const SKILL_PATH = /(?:^|[\s'"=])((?:\/[^\s'"]*\/)?skills\/(?:builtin\/([A-Za-z0-9][\w-]*)\.md|([A-Za-z0-9][\w-]*)\/SKILL\.md|([A-Za-z0-9][\w-]*)\.md))(?=$|[\s'";|&)])/g
 

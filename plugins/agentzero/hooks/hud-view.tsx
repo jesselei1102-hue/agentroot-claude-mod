@@ -369,7 +369,7 @@ export function band(els: Els, m: BandModel, act: BandActions, ctx: ViewCtx) {
     <Box flexDirection="row" alignItems="center" gap={2}>
       <Box flexDirection="row" gap={1} flexShrink={0}>
         <Text color="claude">◆</Text>
-        <Text bold={true}>AgentZero</Text>
+        <Text bold={true}>AgentRoot</Text>
       </Box>
       <Box flexDirection="row" gap={2} flexGrow={1} flexShrink={1} minWidth={0}>
         {m.pills.map(p => <Text {...toned(p.tone)} wrap="truncate-end">{p.text}</Text>)}

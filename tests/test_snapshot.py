@@ -9,7 +9,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 KERNEL_SRC = ROOT / "plugins/agentzero/kernel/src"
 SCRIPT = ROOT / "plugins/agentzero/tools/snapshot.py"
-UPGRADE = "this workspace's AgentZero is too old for the HUD; run /agentzero upgrade"
+UPGRADE = "this workspace's AgentRoot is too old for the HUD; run /agentroot upgrade"
 
 
 def _env(pythonpath):

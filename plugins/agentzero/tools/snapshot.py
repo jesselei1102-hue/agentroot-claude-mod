@@ -1,8 +1,8 @@
-"""Print AgentZero's memory state as one line of JSON, for the plugin's HUD.
+"""Print AgentRoot's memory state as one line of JSON, for the plugin's HUD.
 
 usage: python snapshot.py WORKSPACE   (with PYTHONPATH=WORKSPACE/src)
 
-It reads through the workspace's own AgentZero modules and writes nothing. It always
+It reads through the workspace's own AgentRoot modules and writes nothing. It always
 exits 0: a failure is reported in the JSON as {"schema": 1, "error": "..."}.
 """
 import datetime
@@ -11,7 +11,7 @@ import re
 import sys
 from pathlib import Path
 
-UPGRADE = "this workspace's AgentZero is too old for the HUD; run /agentzero upgrade"
+UPGRADE = "this workspace's AgentRoot is too old for the HUD; run /agentroot upgrade"
 NO_PYTHON = "no usable Python 3.11 with PyYAML"
 _DATE = re.compile(r"^\d{4}-\d{2}-\d{2}")
 

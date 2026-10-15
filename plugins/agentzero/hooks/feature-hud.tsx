@@ -79,7 +79,7 @@ export function registerHud(on: On): void {
     const { Text } = $.ui.resolve(e) as Record<string, El>
     const data = sessionData(await $.session.id())
     const workspace = await locateWorkspace(data, () => $.session.root(), p => $.fs.stat(p).then(() => true, () => false))
-    if (workspace === null) return <Text dimColor={true}>This is not an AgentZero workspace.</Text>
+    if (workspace === null) return <Text dimColor={true}>This is not an AgentRoot workspace.</Text>
 
     const hud = await read($, hudAtom)
     if (hud.snapshot === null) {
@@ -118,7 +118,7 @@ export function registerHud(on: On): void {
     const { Text } = $.ui.resolve(e) as Record<string, El>
     const data = sessionData(await $.session.id())
     const workspace = await locateWorkspace(data, () => $.session.root(), p => $.fs.stat(p).then(() => true, () => false))
-    if (workspace === null) return <Text dimColor={true}>This is not an AgentZero workspace.</Text>
+    if (workspace === null) return <Text dimColor={true}>This is not an AgentRoot workspace.</Text>
 
     const hud = await read($, hudAtom)
     // never "no Facts" when the list could not be read

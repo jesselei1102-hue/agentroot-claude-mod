@@ -2,7 +2,7 @@ import { expect, test } from 'claude-code/testing'
 import { PROMPT, START, world } from './test-world'
 
 const NOTE =
-  'AgentZero plugin: the --said words were not found in what the operator typed in this session, so this was recorded as a proposal. Ask the operator.'
+  'AgentRoot plugin: the --said words were not found in what the operator typed in this session, so this was recorded as a proposal. Ask the operator.'
 const REMEMBER = `./a0 memory remember "units are mm" --said "all in mm" --fact-key units --scope task --tag t --source-run r`
 const PROPOSE = `./a0 memory propose fact 'units are mm' --fact-key units --scope task --tag t --source-run r`
 
@@ -38,7 +38,7 @@ test('an unreadable remember: unchanged, one status message', async ($, on) => {
   const out = await $.tool.call({ tool: 'Bash', command: cmd })
   expect(w.commands).toEqual([cmd])
   expect(out.context).toBeUndefined()
-  expect(w.statuses).toEqual(["AgentZero: the operator's words in this remember were not checked"])
+  expect(w.statuses).toEqual(["AgentRoot: the operator's words in this remember were not checked"])
 })
 
 test('other commands pass untouched and silent', async ($, on) => {

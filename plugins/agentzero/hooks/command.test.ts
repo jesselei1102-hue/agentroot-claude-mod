@@ -5,13 +5,21 @@ import { START, world } from './test-world'
 const probeOk = (argv: readonly string[]) => argv[1] === '-c'
 
 function run($: any, args: string) {
-  return $.command.run({ command: 'agentzero', args }) as Promise<{ text?: string }>
+  return $.command.run({ command: 'agentroot', args }) as Promise<{ text?: string }>
 }
 
-test('session.start registers /agentzero', async ($, on) => {
+// The product is AgentRoot (operator, 2026-10-15); /agentzero stays as an alias, as upstream keeps
+// its agentzero command, so a habit or a doc that names it still works.
+test('session.start registers /agentroot, and /agentzero as its alias', async ($, on) => {
   const w = world(on)
   await $.session.start(START)
-  expect(w.registered).toEqual(['agentzero'])
+  expect(w.registered).toEqual(['agentroot', 'agentzero'])
+})
+
+test('/agentzero answers as /agentroot does', async ($, on) => {
+  world(on)
+  const old = await $.command.run({ command: 'agentzero', args: 'nonsense' }) as { text?: string }
+  expect(old.text).toContain('Usage: /agentroot')
 })
 
 test("init runs the kernel's init and says to start a new session", async ($, on) => {
@@ -69,7 +77,7 @@ test("upgrade never passes --force, and shows the kernel's output as is", async 
 test('upgrade and status outside a workspace say so and run nothing', async ($, on) => {
   const w = world(on, { root: '/proj', existing: [] })
   for (const sub of ['upgrade', 'status']) {
-    expect((await run($, sub)).text).toContain('not inside an AgentZero workspace')
+    expect((await run($, sub)).text).toContain('not inside an AgentRoot workspace')
   }
   expect(w.runs.length).toBe(0)
 })
@@ -91,7 +99,7 @@ test('status shows preflight output and both versions', async ($, on) => {
 test('unknown args show usage', async ($, on) => {
   const w = world(on)
   for (const args of ['', 'frobnicate', 'init-now']) {
-    expect((await run($, args)).text).toContain('Usage: /agentzero')
+    expect((await run($, args)).text).toContain('Usage: /agentroot')
   }
   expect(w.runs.length).toBe(0)
 })

@@ -114,7 +114,7 @@ test('a shell read of a skill file is a skill card', () => {
   expect(cardForCall(call('ls skills/builtin/analyze.md'), '/w', none)).toBeNull()
 })
 
-test('groupCard draws an AgentZero call from the start', () => {
+test('groupCard draws an AgentRoot call from the start', () => {
   const base = { tool: 'Bash', input: { command: R }, isRunning: false, isErrored: false, isInterrupted: false }
   const none = new Map()
   expect(groupCard({ ...base, isRunning: true }, '/w', none)).toEqual({ icon: '⏳', label: 'Recording', tone: 'grey', title: 'Use pnpm, never npm', detail: null, outline: false })

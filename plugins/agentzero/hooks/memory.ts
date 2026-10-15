@@ -2,7 +2,7 @@ import type { Fact, MemoryResult, MemoryResults, MemoryRowState } from '../types
 import type { RunResult } from './snapshot'
 
 export const MEMORY_PANE = 'agentzero-memory'
-export const MEMORY_TITLE = 'AgentZero · Memory'
+export const MEMORY_TITLE = 'AgentRoot · Memory'
 export const MEMORY_ROW_CAP = 200
 
 // actionable: the Fact is still in the snapshot and not on its way out, so Forget can be pressed.

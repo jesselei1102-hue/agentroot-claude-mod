@@ -129,7 +129,7 @@ test('bandSvg is drawn at its own width, 1:1, so nothing is scaled or cut', () =
 
 test('bandSvg: brand, figures, context; a failed hot set in red', () => {
   const ok = bandSvg({ loaded: 3, active: 6, waiting: 2, context: 41, failed: null }, 2000).svg
-  for (const s of ['AgentZero', 'Using 3 of 6 memories', '2 to review', '41%']) expect(ok).toContain(s)
+  for (const s of ['AgentRoot', 'Using 3 of 6 memories', '2 to review', '41%']) expect(ok).toContain(s)
   const bad = bandSvg({ loaded: 3, active: 6, waiting: 0, context: 85, failed: 'exit 1' }, 2000).svg
   expect(bad).toContain('hot set not loaded (exit 1)')
   expect(bad).not.toContain('to review')

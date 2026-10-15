@@ -12,10 +12,10 @@ export type BandModel = { pills: Pill[]; ring: Ring | null; showReview: boolean;
 export const CONTEXT_WARN_PERCENT = 80
 
 function altText(snap: HudState['snapshot'], facts: Fact[] | null): string {
-  if (snap === null) return 'AgentZero memory: state unknown'
-  if (facts === null) return `AgentZero memory: ${snap.active} memories, ${snap.pending.length} to review`
+  if (snap === null) return 'AgentRoot memory: state unknown'
+  if (facts === null) return `AgentRoot memory: ${snap.active} memories, ${snap.pending.length} to review`
   const loaded = facts.filter(f => f.inHotSet).length
-  return `AgentZero memory: using ${loaded} of ${facts.length} memories, ${snap.pending.length} to review`
+  return `AgentRoot memory: using ${loaded} of ${facts.length} memories, ${snap.pending.length} to review`
 }
 
 export function bandModel(hud: HudState, hotSetError: string | null, contextPercent: number | undefined, now: number): BandModel {

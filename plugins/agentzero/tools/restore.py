@@ -2,7 +2,7 @@
 
 usage: python restore.py WORKSPACE fact:<id>   (with PYTHONPATH=WORKSPACE/src)
 
-AgentZero's forget retires a Fact and keeps its file; the kernel has no command to undo
+AgentRoot's forget retires a Fact and keeps its file; the kernel has no command to undo
 that. This sets the status back to active through the kernel's own entry writer, so the
 id, words and dates are the ones the operator forgot. It refuses when a newer Fact with
 the same fact-key replaced it since: two would then contradict.

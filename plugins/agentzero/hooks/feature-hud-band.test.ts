@@ -2,7 +2,7 @@ import { expect, test } from 'claude-code/testing'
 import { PROMPT, SNAPSHOT, START, world } from './test-world'
 
 const BAND = { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 120, scroll: { offset: 0, bodyRows: 10 }, view: {} }
-const PANE = { title: 'AgentZero · Review', isFocused: false, bodyColumns: 60, placement: 'dock' as const, scroll: { offset: 0, bodyRows: 30 }, view: {} }
+const PANE = { title: 'AgentRoot · Review', isFocused: false, bodyColumns: 60, placement: 'dock' as const, scroll: { offset: 0, bodyRows: 30 }, view: {} }
 const EMPTY = JSON.stringify({ ...SNAPSHOT, pending: [] })
 const F = (id: string, inHotSet: boolean, said: string | null) =>
   ({ id, sentence: id, said, author: 'human', createdAt: '2026-10-06T10:17:00.000+08:00', scope: 'project', inHotSet })
@@ -17,7 +17,7 @@ for (const surface of ['desktop', 'terminal'] as const) {
     world(on)
     await $.session.start(START)
     const ui = await $.ui.mount({ plugin: 'agentzero', surface, component: 'AbovePrompt', props: BAND })
-    expect(await bandText(ui)).toBe('◆AgentZero3 memories◉ 1 to review▰▰▰▱▱▱▱▱context 41%')
+    expect(await bandText(ui)).toBe('◆AgentRoot3 memories◉ 1 to review▰▰▰▱▱▱▱▱context 41%')
     expect((await ui.find({ type: 'Text', text: '◉ 1 to review' }))?.props.color).toBe('warning')
     expect(await ui.find({ type: 'Svg' })).toBeUndefined()
   })
@@ -28,7 +28,7 @@ test('the band shows the memories in use on terminal', async ($, on) => {
   w.snapshotJson = JSON.stringify({ ...SNAPSHOT, facts: FACTS })
   await $.session.start(START)
   const ui = await $.ui.mount({ plugin: 'agentzero', surface: 'terminal', component: 'AbovePrompt', props: BAND })
-  expect(await bandText(ui)).toBe('◆AgentZero● Using 1 of 3 memories◉ 1 to review▰▰▰▱▱▱▱▱context 41%')
+  expect(await bandText(ui)).toBe('◆AgentRoot● Using 1 of 3 memories◉ 1 to review▰▰▰▱▱▱▱▱context 41%')
   expect((await ui.find({ type: 'Text', text: '● Using 1 of 3 memories' }))?.props.color).toBe('suggestion')
 })
 
@@ -38,7 +38,7 @@ test('desktop: the band is drawn, with Review and Memory beside it', async ($, o
   await $.session.start(START)
   const ui = await $.ui.mount({ plugin: 'agentzero', surface: 'desktop', component: 'AbovePrompt', props: BAND })
   const svg = String((await ui.find({ type: 'Svg' }))?.props.source)
-  for (const s of ['AgentZero', 'Using 1 of 3 memories', '1 to review', 'context 41%']) expect(svg).toContain(s)
+  for (const s of ['AgentRoot', 'Using 1 of 3 memories', '1 to review', 'context 41%']) expect(svg).toContain(s)
   expect(svg).not.toContain('yours')
   expect(await ui.find({ key: 'az-review' })).toBeDefined()
   expect(await ui.find({ key: 'az-memory' })).toBeDefined()
@@ -91,18 +91,18 @@ test('a failed hot set shows red in the band', async ($, on) => {
   expect((await ui.find({ type: 'Text', text: 'hot set not loaded (exit 1)' }))?.props.color).toBe('error')
 })
 
-test('/agentzero review opens the pane', async ($, on) => {
+test('/agentroot review opens the pane', async ($, on) => {
   const w = world(on)
   await $.session.start(START)
   const out = await $.command.run({ command: 'agentzero', args: 'review' })
-  expect(out.text).toBe('Opened the AgentZero review pane.')
+  expect(out.text).toBe('Opened the AgentRoot review pane.')
   expect(w.opened).toEqual(['agentzero-review'])
 })
 
-test('/agentzero review outside a workspace opens nothing', async ($, on) => {
+test('/agentroot review outside a workspace opens nothing', async ($, on) => {
   const w = world(on, { existing: [] })
   const out = await $.command.run({ command: 'agentzero', args: 'review' })
-  expect(out.text).toContain('not inside an AgentZero workspace')
+  expect(out.text).toContain('not inside an AgentRoot workspace')
   expect(w.opened).toEqual([])
 })
 

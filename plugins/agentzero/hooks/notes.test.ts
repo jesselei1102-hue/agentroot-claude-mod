@@ -1,7 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 import { paneNoteText } from './notes'
 
-const FIRST = "AgentZero: since your last message, the operator changed the memory in the plugin's panes."
+const FIRST = "AgentRoot: since your last message, the operator changed the memory in the plugin's panes."
 
 test('empty → null', () => {
   expect(paneNoteText([])).toBeNull()

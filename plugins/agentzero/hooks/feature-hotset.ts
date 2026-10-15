@@ -79,7 +79,7 @@ export function registerHotSet(on: On): void {
         await update($, hotSetErrorAtom, () => null)
       } else {
         // the desktop app draws no status row, so the message also goes to a toast
-        const text = `AgentZero: hot set not loaded (${loaded.reason})`
+        const text = `AgentRoot: hot set not loaded (${loaded.reason})`
         $.ui.status(text)
         $.ui.toast(text)
         await update($, hotSetErrorAtom, () => loaded.reason)

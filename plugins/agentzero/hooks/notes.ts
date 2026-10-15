@@ -1,6 +1,6 @@
 import type { PaneNote } from '../types'
 
-const FIRST = "AgentZero: since your last message, the operator changed the memory in the plugin's panes."
+const FIRST = "AgentRoot: since your last message, the operator changed the memory in the plugin's panes."
 
 // What the operator changed in the panes since the last message, for the assistant; null when nothing did.
 export function paneNoteText(notes: readonly PaneNote[]): string | null {
