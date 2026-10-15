@@ -43,7 +43,7 @@ Then type these in Claude Code:
 
 1. Add the marketplace (a list of plugins):
    ```text
-   /plugin marketplace add jesselei1102-hue/agentzero-claude-mod
+   /plugin marketplace add jesselei1102-hue/agentroot-claude-mod
    ```
 2. Install the plugin. When asked for a scope, choose the smallest one (project or local), so the plugin works only in this project:
    ```text
