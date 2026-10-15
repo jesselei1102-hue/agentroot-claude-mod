@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.0-rc.1 — kernel AgentRoot 0.5.0 (c27880a)
+
+- **The instrument HUD** (`docs/instrument-hud-spec.md`). The Memory pane answers "what does the assistant remember now, and can I trust it?": gauges at the top (loaded, in your words, a 30-day timeline, waiting), drawn as SVG in the app's light or dark colours; every Fact on one line under `LOADED NOW`, `NOT LOADED` or `FORGOTTEN`, with its source (`❝ yours` / `◇ inferred`), age, scope and `↺` when it replaced an older one; your words, the replaced sentence and `Forget` on hover. The Review pane and the band use the same figures. The terminal draws text gauges and shows every row's details.
+- The snapshot gives each Fact its `factKey` and the sentence of the retired Fact it replaced.
+- **Kernel: AgentRoot 0.5.0.** AgentZero's command is now `agentroot` (the plugin runs the kernel as `python -m adapter`, so nothing changes here). Also from 0.4.8–0.4.9: an unanswered proposal under the same key is brought back, and a Fact keeps the operator's message as the hook recorded it.
+- Tests: the 2.1.295 test kit wants a value from `ui.status` and `ui.toast` hooks.
+
 ## 1.3.0-rc.7 — kernel 0.4.7 (333cd6e)
 
 - Back to rc.5's rows (rc.6's one-line tags and button read worse; reverted). A Fact's words in the Memory pane are cut at 48 width units (Chinese counting 2) with "…": the desktop app does not wrap a long Chinese line in a pane and cut it at the edge.

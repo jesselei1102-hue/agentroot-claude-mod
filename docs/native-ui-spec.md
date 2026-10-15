@@ -2,6 +2,8 @@ Status: approved by the operator 2026-10-08 ("都用A"; "写设计说明吧。�
 
 # Spec: the HUD in the app's own components (plugin 1.3)
 
+Superseded for the panes and the band by [instrument-hud-spec.md](instrument-hud-spec.md) (plugin 1.4), which brings SVG back for the gauges only.
+
 In this document, "the operator" is the person who works with the assistant. "The HUD" is what [hud-spec.md](hud-spec.md) and [memory-pane-spec.md](memory-pane-spec.md) added: the band above the prompt, the Review and Memory panes, and the cards in the transcript.
 
 ## Problem
