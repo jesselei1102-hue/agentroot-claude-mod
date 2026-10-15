@@ -1,7 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 import { SNAPSHOT, START, world } from './test-world'
 
-const PANE = { title: 'AgentZero · Memory', isFocused: false, bodyColumns: 60, placement: 'dock' as const, scroll: { offset: 0, bodyRows: 30 }, view: {} }
+const PANE = { title: 'AgentZero · Memory', isFocused: false, bodyColumns: 140, placement: 'dock' as const, scroll: { offset: 0, bodyRows: 30 }, view: {} }
 const A = { id: 'fact:a', sentence: 'Never deploy on Fridays.', said: '周五别部署', author: 'human', createdAt: '2026-10-06T10:17:00.000+08:00', scope: 'project', inHotSet: true }
 const B = { id: 'fact:b', sentence: 'Deploys go out on Tuesdays.', said: null, author: 'agent', createdAt: '2026-10-03T14:30:00.000+08:00', scope: 'project', inHotSet: false }
 const json = (facts: unknown) => JSON.stringify({ ...SNAPSHOT, facts })
@@ -12,6 +12,15 @@ async function allText(ui: { findAll: (q: { type: string }) => Promise<{ text?: 
 
 async function mount($: any, surface: 'desktop' | 'terminal' = 'desktop') {
   return $.ui.mount({ plugin: 'agentzero', surface, component: 'Pane', props: PANE, requestId: 'agentzero-memory' })
+}
+
+async function cluster(ui: any): Promise<string> {
+  return String((await ui.find({ type: 'Svg' }))?.props.source ?? '')
+}
+
+// The kit hands back no `hover` (a surface-side style), so a hover row is its display: 'none' Box.
+async function hoverBoxes(ui: any) {
+  return (await ui.findAll({ type: 'Box' })).filter((b: any) => b.props.display === 'none')
 }
 
 
@@ -33,20 +42,60 @@ test('/agentzero memory outside a workspace opens nothing', async ($, on) => {
 })
 
 for (const surface of ['desktop', 'terminal'] as const) {
-  test(`the pane lists the Facts on ${surface}`, async ($, on) => {
+  test(`Memory pane sections and rows on ${surface}`, async ($, on) => {
     const w = world(on)
     w.snapshotJson = json([A, B])
     await $.session.start(START)
     const ui = await mount($, surface)
-    expect(await ui.find({ type: 'Svg' })).toBeUndefined()
-    expect(await allText(ui)).toContain('Active2In hot set1Waiting1')
-    expect(await ui.find({ text: 'Never deploy on Fridays.' })).toBeDefined()
-    expect(await ui.find({ text: '“周五别部署”' })).toBeDefined()
+    const t = await allText(ui)
+    expect(t).toContain('LOADED NOW · 1')
+    expect(t).toContain('NOT LOADED · 1')
+    expect(t).toContain('●Never deploy on Fridays.❝ yours')
+    expect(t).toContain('○Deploys go out on Tuesdays.◇ inferred')
     expect((await ui.find({ type: 'Text', text: '●' }))?.props.color).toBe('suggestion')
-    expect(await ui.find({ text: 'Inferred by the assistant, kept by you' })).toBeDefined()
+    expect(await ui.find({ key: 'az-forget-fact:a' })).toBeDefined()
     expect(await ui.find({ key: 'az-forget-fact:b' })).toBeDefined()
   })
 }
+
+test('desktop: a cluster SVG, details on hover', async ($, on) => {
+  const w = world(on)
+  w.snapshotJson = json([A, B])
+  await $.session.start(START)
+  const ui = await mount($)
+  const svg = await cluster(ui)
+  expect(svg).toContain('LOADED')
+  expect(svg).toContain('1 / 2')
+  expect(svg).toContain('width="798"')
+  expect((await hoverBoxes(ui)).length).toBe(2)
+})
+
+test('terminal: text gauges, details always shown', async ($, on) => {
+  const w = world(on)
+  w.snapshotJson = json([A, B])
+  await $.session.start(START)
+  const ui = await mount($, 'terminal')
+  expect(await ui.find({ type: 'Svg' })).toBeUndefined()
+  expect(await allText(ui)).toContain('LOADED ▰▰▰▱▱ 1/2')
+  expect((await ui.findAll({ type: 'Box' })).some((b: any) => b.props.display === 'none')).toBe(false)
+  expect(await allText(ui)).toContain('“周五别部署”')
+})
+
+test('Loaded counts Facts in the hot set, not the hot set ids', async ($, on) => {
+  const w = world(on)
+  w.snapshotJson = JSON.stringify({ ...SNAPSHOT, hotSet: { at: SNAPSHOT.hotSet.at, factIds: ['fact:gone', 'fact:a'] }, facts: [A, B] })
+  await $.session.start(START)
+  expect(await cluster(await mount($))).toContain('1 / 2')
+})
+
+test('a Fact that replaced an older one shows ↺ and the older words on hover', async ($, on) => {
+  const w = world(on)
+  w.snapshotJson = json([{ ...A, factKey: 'deploys', replaces: 'Deploy any day.' }, B])
+  await $.session.start(START)
+  const t = await allText(await mount($))
+  expect(t).toContain('↺')
+  expect(t).toContain('Replaced “Deploy any day.”')
+})
 
 // One press: Restore undoes a forget, and in the desktop app every press after the first in a
 // pane took two clicks (an engine fault), so a confirmation step cost the most (operator, 2026-10-08).
@@ -71,8 +120,10 @@ test('forget runs the kernel and keeps the row', async ($, on) => {
   w.snapshotJson = json([B])
   await ui.press({ key: 'az-forget-fact:a' })
   expect(w.runs.at(-1)).toEqual({ argv: ['/w/a0', 'memory', 'forget', 'fact:a'], init: { cwd: '/w', timeoutMs: 10000 } })
-  expect(await allText(ui)).toContain('Active1In hot set0')
-  expect(await allText(ui)).toContain('Forgotten · 1')
+  expect(await cluster(ui)).toContain('0 / 1')
+  expect(await allText(ui)).toContain('FORGOTTEN · 1')
+  expect((await hoverBoxes(ui)).length).toBe(1)
+  expect(await ui.find({ key: 'az-restore-fact:a' })).toBeDefined()
   expect((await ui.find({ type: 'Text', text: 'Never deploy on Fridays.' }))?.props.strikethrough).toBe(true)
   expect(await ui.find({ key: 'az-forget-fact:a' })).toBeUndefined()
 })
@@ -85,8 +136,7 @@ test('a forgotten row survives a failed refresh', async ($, on) => {
   const ui = await mount($)
   w.snapshotJson = 'not json'
   await ui.press({ key: 'az-forget-fact:a' })
-  expect(await allText(ui)).toContain('Active1In hot set0')
-  expect(await allText(ui)).toContain('Forgotten · 1')
+  expect(await allText(ui)).toContain('FORGOTTEN · 1')
 })
 
 test('a failed forget shows the reason and offers Forget again', async ($, on) => {
@@ -140,20 +190,6 @@ test('every way of opening a pane asks for the keyboard', async ($, on) => {
   expect(w.openFocus).toEqual([true, true, true, true])
 })
 
-// A long line must never push Forget out of the pane (lab, 2026-10-08): the line beside it shrinks.
-test('a Fact reads as its sentence, then its words and date beside Forget', async ($, on) => {
-  const w = world(on)
-  w.snapshotJson = json([A, B])
-  await $.session.start(START)
-  const ui = await mount($)
-  expect(await ui.find({ type: 'Text', text: /^“周五别部署”$/ })).toBeDefined()
-  expect(await ui.find({ type: 'Text', text: /^Oct 6$/ })).toBeDefined()
-  expect(await allText(ui)).toContain('In hot set · 1●Never deploy on Fridays.')
-  expect(await allText(ui)).toContain('Other Facts · 1○Deploys go out on Tuesdays.')
-  const shrinking = (await ui.findAll({ type: 'Box' })).filter((b: any) => b.props.flexShrink === 1 && b.props.minWidth === 0)
-  expect(shrinking.length > 0).toBe(true)
-})
-
 // A bordered button takes the keyboard when clicked; the redraw that follows removes it, the
 // keyboard falls back to the composer, and the next click into the pane is lost (desktop log,
 // 2026-10-08: rc.3's plain buttons took one click, 1.3.0-rc.1's bordered ones two). Plain ones do not.
@@ -185,7 +221,7 @@ test('Restore brings a forgotten Fact back and offers Forget again', async ($, o
   expect(run.argv.slice(2)).toEqual(['/w', 'fact:a'])
   expect(await ui.find({ key: 'az-forget-fact:a' })).toBeDefined()
   expect(await ui.find({ key: 'az-restore-fact:a' })).toBeUndefined()
-  expect(await allText(ui)).toContain('Active2In hot set1Waiting1')
+  expect(await cluster(ui)).toContain('1 / 2')
 })
 
 test('a Restore that fails keeps the row forgotten and says why', async ($, on) => {

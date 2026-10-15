@@ -1,15 +1,21 @@
 import type { Fact, PendingItem } from '../types'
 import type { BandModel, PillTone } from './band'
 import type { MemoryRow } from './memory'
+import { columnsToPx, memoryCluster, textGauge, type MemoryFigures } from './instruments'
 import { KIND_LABEL, type PaneRow } from './pane'
-import { factMeta, reviewMeta, themeOf } from './view'
+import { DAY, age, columnsInline, displayWidth, factDetail, reviewMeta, sourceChip, themeOf } from './view'
 
 // The HUD's trees, from plain data: no `$` here, so a preview mod can draw them with fixtures.
 // The layout follows the mods people like to look at: a row of figures on top, sections with a
 // count, one status mark per row, two lines a row, the action at the row's right.
 
 export type El = (props: Record<string, unknown>) => never
-export type Els = { Box: El; Text: El; Button: El }
+export type Els = { Box: El; Text: El; Button: El; Svg?: El }
+export type ViewCtx = { surface: 'terminal' | 'desktop' | 'vscode' | 'mobile'; columns: number; now: number }
+
+// Hover reveals a row's details where the surface has a pointer; the terminal shows them always.
+const hovers = (ctx: ViewCtx) => ctx.surface !== 'terminal'
+const drawsSvg = (els: Els, ctx: ViewCtx) => els.Svg !== undefined && ctx.surface !== 'terminal'
 
 // A tone as Text props: a theme key, dim for grey, nothing for ink.
 export function toned(tone: PillTone): Record<string, unknown> {
@@ -34,11 +40,14 @@ function stats({ Box, Text }: Els, items: Stat[]) {
   )
 }
 
-function section({ Box, Text }: Els, title: string, count: number) {
+function section({ Box, Text }: Els, title: string, count: number, note: string | null = null) {
   return (
-    <Box flexDirection="row" marginTop={1}>
-      <Text bold={true}>{title}</Text>
-      <Text dimColor={true}>{` · ${count}`}</Text>
+    <Box flexDirection="row" marginTop={1} justifyContent="space-between">
+      <Box flexDirection="row">
+        <Text bold={true} dimColor={true}>{title}</Text>
+        <Text dimColor={true}>{` · ${count}`}</Text>
+      </Box>
+      {note !== null && <Text dimColor={true}>{note}</Text>}
     </Box>
   )
 }
@@ -73,6 +82,7 @@ export type MemoryView = {
   inHotSet: number
   waiting: number
   hidden: number
+  loadedAt: string | null
 }
 
 export type MemoryActions = { forget: (fact: Fact) => unknown; restore: (fact: Fact) => unknown }
@@ -88,47 +98,104 @@ const cited = (skills: string[]) =>
     ? `Cited by skill ${skills[0]}, which needs a new version`
     : `Cited by skills ${skills.join(', ')}, which need new versions`
 
-function factRow(els: Els, r: MemoryRow, act: MemoryActions) {
+// The trust columns: who said it, how old it is, where it holds, and ↺ when it replaced an older one.
+function trustColumns({ Box, Text }: Els, r: MemoryRow, ctx: ViewCtx) {
+  const chip = sourceChip(r.fact)
+  return (
+    <Box flexDirection="row" gap={2} flexShrink={0}>
+      <Text dimColor={chip.dim}>{chip.text}</Text>
+      <Text dimColor={true}>{age(ctx.now, r.fact.createdAt)}</Text>
+      <Text dimColor={true}>{r.fact.scope}</Text>
+      {r.fact.replaces !== null && <Text color="suggestion">↺</Text>}
+    </Box>
+  )
+}
+
+// Room the sentence has on its line: the mark, the gap and, when inline, the trust columns.
+const sentenceRoom = (ctx: ViewCtx) => ctx.columns - (columnsInline(ctx.columns) ? 38 : 6)
+
+function factRow(els: Els, r: MemoryRow, act: MemoryActions, ctx: ViewCtx) {
   const { Box, Text, Button } = els
   const id = r.fact.id
   const gone = r.state === 'forgotten'
-  const meta = factMeta(r)
-  const line = (
-    <Box flexDirection="row" flexShrink={1} minWidth={0}>
-      <Text dimColor={true} wrap="truncate-end">{meta.words}</Text>
-      {meta.tags.length > 0 && <Text dimColor={true}>{' · '}</Text>}
-      {meta.tags.map(seg => (seg.color !== undefined ? <Text color={seg.color}>{seg.text}</Text> : <Text dimColor={true}>{seg.text}</Text>))}
+  const inline = columnsInline(ctx.columns)
+  const mark = factMark(r)
+  const detail = [
+    ...(displayWidth(r.fact.sentence) > sentenceRoom(ctx) ? [r.fact.sentence] : []),
+    ...factDetail(r),
+  ]
+  // A failed row keeps its Forget in sight; a quiet row shows it on hover.
+  const hidden = hovers(ctx) && r.state === 'active' ? { display: 'none', hover: { display: 'flex' } } : {}
+  return (
+    <Box key={`az-row-${id}`} flexDirection="column">
+      <Box flexDirection="row" gap={1} alignItems="center">
+        <Box width={2} flexShrink={0}>
+          <Text {...toned(mark.tone)}>{mark.glyph}</Text>
+        </Box>
+        <Box flexGrow={1} flexShrink={1} minWidth={0}>
+          <Text wrap="truncate-end" strikethrough={gone} dimColor={gone}>{r.fact.sentence}</Text>
+        </Box>
+        {!gone && inline && trustColumns(els, r, ctx)}
+        {gone && <Button key={`az-restore-${id}`} label="Restore" plain={true} dimColor={true} onPress={() => act.restore(r.fact)} />}
+      </Box>
+      {!gone && !inline && (
+        <Box paddingLeft={3}>{trustColumns(els, r, ctx)}</Box>
+      )}
+      {!gone && (
+        <Box flexDirection="row" paddingLeft={3} gap={2} {...hidden}>
+          <Box flexDirection="column" flexGrow={1} flexShrink={1} minWidth={0}>
+            {detail.map(line => <Text dimColor={true} wrap="wrap">{line}</Text>)}
+          </Box>
+          {r.actionable && <Button key={`az-forget-${id}`} label="Forget" plain={true} dimColor={true} onPress={() => act.forget(r.fact)} />}
+        </Box>
+      )}
+      {(r.state === 'failed' || gone) && r.message !== null && <Box paddingLeft={3}><Text color="error">{r.message}</Text></Box>}
+      {r.citedBy.length > 0 && <Box paddingLeft={3}><Text color="warning">{cited(r.citedBy)}</Text></Box>}
     </Box>
   )
-  const actions = gone ? (
-    <Button key={`az-restore-${id}`} label="Restore" plain={true} dimColor={true} onPress={() => act.restore(r.fact)} />
-  ) : (
-    r.actionable && <Button key={`az-forget-${id}`} label="Forget" plain={true} dimColor={true} onPress={() => act.forget(r.fact)} />
-  )
-  const extra = [
-    (r.state === 'failed' || gone) && r.message !== null ? <Text color="error">{r.message}</Text> : null,
-    r.citedBy.length > 0 ? <Text color="warning">{cited(r.citedBy)}</Text> : null,
-  ]
-  return row(els, factMark(r), r.fact.sentence, gone, line, actions, extra)
 }
 
-export function memoryPane(els: Els, v: MemoryView, act: MemoryActions) {
+export function memoryFigures(v: MemoryView, now: number): MemoryFigures {
+  const kept = v.rows.filter(r => r.state !== 'forgotten').map(r => r.fact)
+  const dated = kept.filter(f => f.createdAt !== null && !Number.isNaN(Date.parse(f.createdAt)))
+  const times = dated.map(f => Date.parse(f.createdAt!))
+  const iso = (t: number) => new Date(t).toISOString()
+  return {
+    loaded: kept.filter(f => f.inHotSet).length,
+    active: v.active,
+    yours: kept.filter(f => f.said !== null).length,
+    waiting: v.waiting,
+    loadedAt: v.loadedAt,
+    dots: dated.map(f => ({ days: (now - Date.parse(f.createdAt!)) / DAY, loaded: f.inHotSet, title: f.sentence })),
+    oldest: times.length > 0 ? age(now, iso(Math.min(...times))) : null,
+    newest: times.length > 0 ? age(now, iso(Math.max(...times))) : null,
+  }
+}
+
+function memoryInstruments(els: Els, v: MemoryView, ctx: ViewCtx) {
+  const f = memoryFigures(v, ctx.now)
+  if (drawsSvg(els, ctx)) {
+    const Svg = els.Svg!
+    const alt = `Loaded ${f.loaded} of ${f.active}, ${f.yours} in your words, ${f.waiting} waiting`
+    return <Svg source={memoryCluster(f, ctx.columns)} alt={alt} isInteractive={true} width={columnsToPx(ctx.columns)} />
+  }
+  const { Text } = els
+  return <Text dimColor={true}>{`LOADED ${textGauge(f.loaded, f.active)} ${f.loaded}/${f.active}   YOURS ${textGauge(f.yours, f.active)} ${f.yours}/${f.active}   WAITING ${f.waiting}`}</Text>
+}
+
+export function memoryPane(els: Els, v: MemoryView, act: MemoryActions, ctx: ViewCtx) {
   const { Box, Text } = els
   const hot = v.rows.filter(r => r.state !== 'forgotten' && r.fact.inHotSet)
   const other = v.rows.filter(r => r.state !== 'forgotten' && !r.fact.inHotSet)
   const gone = v.rows.filter(r => r.state === 'forgotten')
-  const group = (title: string, rows: MemoryRow[]) =>
-    rows.length === 0 ? [] : [section(els, title, rows.length), ...rows.map(r => factRow(els, r, act))]
+  const group = (title: string, rows: MemoryRow[], note: string | null = null) =>
+    rows.length === 0 ? [] : [section(els, title, rows.length, note), ...rows.map(r => factRow(els, r, act, ctx))]
   return (
     <Box flexDirection="column" gap={1}>
-      {stats(els, [
-        { label: 'Active', value: v.active, tone: 'ink' },
-        { label: 'In hot set', value: v.inHotSet, tone: v.inHotSet > 0 ? 'blue' : 'grey' },
-        { label: 'Waiting', value: v.waiting, tone: v.waiting > 0 ? 'amber' : 'grey' },
-      ])}
-      {group('In hot set', hot)}
-      {group('Other Facts', other)}
-      {group('Forgotten', gone)}
+      {memoryInstruments(els, v, ctx)}
+      {group('LOADED NOW', hot, v.loadedAt !== null ? `loaded ${v.loadedAt}` : null)}
+      {group('NOT LOADED', other)}
+      {group('FORGOTTEN', gone)}
       {v.hidden > 0 && <Text dimColor={true}>{`+${v.hidden} older Facts not shown`}</Text>}
     </Box>
   )

@@ -3,7 +3,8 @@ import type { On } from 'claude-code'
 import type { Fact, HudState, MemoryResults, PaneNote, PaneResults, PendingItem, RawOpen } from '../types'
 import { bandModel } from './band'
 import { cardForCall, groupCard, type CallLike, type Card } from './cards'
-import { band, memoryPane, reviewPane, toned, type El, type Els } from './hud-view'
+import { band, memoryPane, reviewPane, toned, type El, type Els, type ViewCtx } from './hud-view'
+import { clockTime } from './view'
 import { MEMORY_PANE, MEMORY_TITLE, cancelForget, forgetArgv, forgetResult, memoryRows, mergeMemory, restoreResult } from './memory'
 import { REVIEW_PANE, REVIEW_TITLE, mergeResult, paneResult, paneRows, reviewArgv } from './pane'
 import { locateWorkspace, sessionData, writeMarks } from './session'
@@ -166,7 +167,9 @@ export function registerHud(on: On): void {
       await refresh()
     }
     const waiting = hud.snapshot.pending.length
-    return memoryPane($.ui.resolve(e) as unknown as Els, { rows, active, inHotSet, waiting, hidden }, { forget, restore })
+    const loadedAt = clockTime(hud.snapshot.hotSet?.at ?? null)
+    const ctx: ViewCtx = { surface: e.surface, columns: e.props.bodyColumns, now: await $.clock.now() }
+    return memoryPane($.ui.resolve(e) as unknown as Els, { rows, active, inHotSet, waiting, hidden, loadedAt }, { forget, restore }, ctx)
   })
 
   on('ui.render', { component: 'ToolUse' }, async ($, e, next) => {

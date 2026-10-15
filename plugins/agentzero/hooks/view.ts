@@ -33,10 +33,16 @@ const WORDS_MAX = 48
 
 // The app does not wrap a long Chinese line in a pane, so long words are cut here: a Chinese
 // (or other full-width) character counts 2, any other 1, and one unit is kept for the "…".
+const width = (ch: string) => ((ch.codePointAt(0) ?? 0) >= 0x2e80 ? 2 : 1)
+
+// Columns a line takes in the pane, a full-width character counting 2.
+export function displayWidth(s: string): number {
+  return Array.from(s).reduce((n, ch) => n + width(ch), 0)
+}
+
 function cutWords(s: string): string {
-  const width = (ch: string) => ((ch.codePointAt(0) ?? 0) >= 0x2e80 ? 2 : 1)
   const chars = Array.from(s)
-  if (chars.reduce((n, ch) => n + width(ch), 0) <= WORDS_MAX) return s
+  if (displayWidth(s) <= WORDS_MAX) return s
   let used = 0
   let out = ''
   for (const ch of chars) {
@@ -67,7 +73,7 @@ export function reviewMeta(item: PendingItem): string {
 }
 
 const HOUR = 3_600_000
-const DAY = 24 * HOUR
+export const DAY = 24 * HOUR
 
 // How old a Fact is, in one short word: now, 5h, 3d, 5w; a dash when the date is unknown.
 export function age(now: number, iso: string | null): string {
@@ -90,4 +96,16 @@ export function factDetail(row: MemoryRow): string[] {
   const lines = [f.said !== null ? `“${f.said}”` : 'Inferred by the assistant, kept by you']
   if (f.replaces !== null) lines.push(`Replaced “${f.replaces}”`)
   return lines
+}
+
+// From 70 columns a row's source, age and scope sit beside its sentence; narrower, under it.
+export function columnsInline(columns: number): boolean {
+  return columns >= 70
+}
+
+// "14:02", the hot set's load time in the clock's own zone; null when unknown.
+export function clockTime(iso: string | null): string | null {
+  const at = iso !== null ? new Date(iso) : null
+  if (at === null || Number.isNaN(at.getTime())) return null
+  return `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`
 }

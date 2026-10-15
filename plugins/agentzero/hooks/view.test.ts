@@ -1,7 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 import type { Fact } from '../types'
 import type { MemoryRow } from './memory'
-import { age, factDetail, factMeta, reviewMeta, shortDate, sourceChip, themeOf } from './view'
+import { age, columnsInline, factDetail, factMeta, reviewMeta, shortDate, sourceChip, themeOf } from './view'
 
 const fact = (over: Partial<Fact> = {}): Fact => ({
   id: 'fact:a', sentence: 'Use pnpm.', said: '用 pnpm', author: 'human', createdAt: '2026-10-06T23:30:00.000-07:00', scope: 'project', inHotSet: true, factKey: null, replaces: null, ...over,
@@ -66,4 +66,9 @@ test('factDetail shows the whole words and what it replaced', () => {
   expect(factDetail(row(fact({ said: 'x'.repeat(80), replaces: 'Stand-up at 9.' }))))
     .toEqual([`“${'x'.repeat(80)}”`, 'Replaced “Stand-up at 9.”'])
   expect(factDetail(row(fact({ said: null })))).toEqual(['Inferred by the assistant, kept by you'])
+})
+
+test('columns sit beside the sentence from 70 columns', () => {
+  expect(columnsInline(70)).toBe(true)
+  expect(columnsInline(69)).toBe(false)
 })
