@@ -86,32 +86,49 @@ def hook_interpreter(workspace: Path) -> str | None:
     return shlex.split(command)[0] if command else None
 
 
+_HOOK_CONFIGS: tuple[tuple[str, Path], ...] = (
+    ("cursor", Path(".cursor") / "hooks.json"),
+    ("codex", Path(".codex") / "hooks.json"),
+    ("claude", Path(".claude") / "settings.json"),
+)
+
+
 def hook_command(workspace: Path) -> str | None:
     """The first wired Trace hook command, whatever harness wired it."""
-    for config in (
-        workspace / ".cursor" / "hooks.json",
-        workspace / ".codex" / "hooks.json",
-        workspace / ".claude" / "settings.json",
-    ):
-        if not config.is_file():
-            continue
-        loaded = json.loads(config.read_text(encoding="utf-8"))
-        if not isinstance(loaded, dict):
-            continue
-        for entries in (loaded.get("hooks") or {}).values():
-            for entry in entries or []:
-                if not isinstance(entry, dict):
-                    continue
-                # Cursor and Codex: a flat list of commands.
-                command = str(entry.get("command") or "").strip()
-                if command:
-                    return command
-                # Claude Code: each event holds matcher groups with their own hooks.
-                for nested in entry.get("hooks") or []:
-                    if isinstance(nested, dict):
-                        nested_command = str(nested.get("command") or "").strip()
-                        if nested_command:
-                            return nested_command
+    wired = wired_hooks(workspace)
+    return wired[0][1] if wired else None
+
+
+def wired_hooks(workspace: Path) -> list[tuple[str, str]]:
+    """Each harness wired in this workspace, with the first hook command it runs."""
+    found: list[tuple[str, str]] = []
+    for harness, config in _HOOK_CONFIGS:
+        command = _first_command(workspace / config)
+        if command:
+            found.append((harness, command))
+    return found
+
+
+def _first_command(config: Path) -> str | None:
+    if not config.is_file():
+        return None
+    loaded = json.loads(config.read_text(encoding="utf-8"))
+    if not isinstance(loaded, dict):
+        return None
+    for entries in (loaded.get("hooks") or {}).values():
+        for entry in entries or []:
+            if not isinstance(entry, dict):
+                continue
+            # Cursor: a flat list of commands.
+            command = str(entry.get("command") or "").strip()
+            if command:
+                return command
+            # Claude Code and Codex: each event holds groups with their own hooks.
+            for nested in entry.get("hooks") or []:
+                if isinstance(nested, dict):
+                    nested_command = str(nested.get("command") or "").strip()
+                    if nested_command:
+                        return nested_command
     return None
 
 
@@ -126,7 +143,7 @@ def run_preflight(
     checks: list[Check] = [_check_packages(workspace)]
     interpreter = hook_interpreter(workspace)
     checks.append(_check_yaml_importable(workspace, interpreter))
-    checks.append(_check_hook_round_trip(workspace, interpreter))
+    checks.append(_check_hook_round_trip(workspace))
     checks.append(_check_hook_events(workspace))
     checks.append(_check_version_skew(workspace, framework_root, strict=strict))
     checks.append(_check_conventions(workspace, framework_root))
@@ -321,7 +338,7 @@ def _check_yaml_importable(workspace: Path, interpreter: str | None) -> Check:
 
 
 def _probe_events(
-    workspace: Path, hook: Path, run_id: str
+    workspace: Path, harness: str, run_id: str
 ) -> tuple[dict[str, object], ...]:
     """A tool call then a stop, shaped like the harness that wired this hook.
 
@@ -329,9 +346,9 @@ def _probe_events(
     probe would assert nothing. Sending the harness's own shape also exercises
     the normalizer, not just the plumbing.
     """
-    if ".claude" in hook.parts or ".codex" in hook.parts:
+    if harness in {"claude", "codex"}:
         # Codex and Claude Code share the event shape; each has its own run id field.
-        id_field = "turn_id" if ".codex" in hook.parts else "prompt_id"
+        id_field = "turn_id" if harness == "codex" else "prompt_id"
         return (
             {
                 "hook_event_name": "PostToolUse",
@@ -367,70 +384,103 @@ def _probe_events(
     )
 
 
-# How each harness names the workspace root in its hook command; the shell expands it.
-_ROOT_PREFIXES = ("$(git rev-parse --show-toplevel)/", "$CLAUDE_PROJECT_DIR/")
+_GIT_ROOT = "$(git rev-parse --show-toplevel)/"
+"""How an older Codex adapter named the workspace root; `materialize` replaces it."""
+_PROJECT_DIR = "$CLAUDE_PROJECT_DIR/"
 
 
-def _wired_hook_script(workspace: Path) -> Path | None:
-    """The hook script the wired command names, rather than a hard-coded path."""
-    command = hook_command(workspace)
-    if not command:
-        return None
-    for token in shlex.split(command)[1:]:
-        for prefix in _ROOT_PREFIXES:
-            token = token.removeprefix(prefix)
-        candidate = workspace / token
+def _hook_run(workspace: Path, command: str) -> tuple[list[str], Path] | str:
+    """The argv the harness's shell makes of this command, and where to start it; or why not.
+
+    Stripping the root prefix tested the workspace rather than the command: a Codex
+    hook that went through git passed here and never ran in a workspace with no repo.
+    """
+    words = shlex.split(command)
+    resolved = shutil.which(words[0]) or words[0]
+    if words[1:2] == ["-c"] and len(words) > 2:
+        # The command finds the workspace itself, so start it below the root, as Codex may.
+        start = workspace / "memory"
+        return [resolved, "-c", words[2]], start if start.is_dir() else workspace
+    for token in words[1:]:
+        if token.startswith(_GIT_ROOT):
+            root = _git_top_level(workspace)
+            if root is None:
+                return (
+                    "the command finds its script through git, "
+                    "and no git repository holds this workspace"
+                )
+            candidate = root / token.removeprefix(_GIT_ROOT)
+        else:
+            candidate = workspace / token.removeprefix(_PROJECT_DIR)
         if candidate.is_file():
-            return candidate
-    return None
+            return [resolved, str(candidate)], workspace
+    return "the command names no hook script that exists"
 
 
-def _check_hook_round_trip(workspace: Path, interpreter: str | None) -> Check:
-    hook = _wired_hook_script(workspace)
-    if interpreter is None or hook is None:
+def _git_top_level(workspace: Path) -> Path | None:
+    try:
+        found = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            text=True,
+            cwd=workspace,
+        )
+    except OSError:
+        return None
+    return Path(found.stdout.strip()) if found.returncode == 0 else None
+
+
+def _check_hook_round_trip(workspace: Path) -> Check:
+    """Every wired harness, not only the first: a broken second one passed unseen."""
+    wired = wired_hooks(workspace)
+    if not wired:
         return Check("hook round trip", "skip", "no Trace hook wired in this workspace")
+    failures = [
+        f"{harness}: {reason}"
+        for harness, wired_command in wired
+        if (reason := _round_trip(workspace, harness, wired_command))
+    ]
+    if failures:
+        return Check(
+            name="hook round trip",
+            status="fail",
+            detail="; ".join(failures),
+            fix=f"re-run `{command('adapter materialize')}` on this machine",
+        )
+    harnesses = ", ".join(harness for harness, _ in wired)
+    return Check("hook round trip", "pass", f"probe event sequence produced a Trace ({harnesses})")
 
+
+def _round_trip(workspace: Path, harness: str, wired_command: str) -> str | None:
+    """Why this harness's hook wrote no Trace for a probe run, or None when it did."""
+    run = _hook_run(workspace, wired_command)
+    if isinstance(run, str):
+        return run
+    argv, start = run
     run_id = f"preflight-{uuid.uuid4().hex[:8]}"
     traces = workspace / "memory" / "traces"
     breadcrumb = traces / ".hook-error.log"
     before = breadcrumb.stat().st_size if breadcrumb.is_file() else 0
-    resolved = shutil.which(interpreter) or interpreter
-
-    events = _probe_events(workspace, hook, run_id)
     try:
-        for event in events:
+        for event in _probe_events(workspace, harness, run_id):
             subprocess.run(
-                [resolved, str(hook)],
+                argv,
                 input=json.dumps(event),
                 capture_output=True,
                 text=True,
-                cwd=workspace,
+                cwd=start,
             )
     except OSError as exc:
         _clean_probe(traces, run_id)
-        return Check(
-            name="hook round trip",
-            status="fail",
-            detail=f"could not run the hook with {resolved}: {exc.strerror or exc}",
-            fix=f"re-run `{command('adapter materialize')}` on this machine",
-        )
+        return f"could not run the hook with {argv[0]}: {exc.strerror or exc}"
 
-    written = traces / f"{run_id}.yaml"
-    produced = written.is_file()
+    produced = (traces / f"{run_id}.yaml").is_file()
     reason = _consume_breadcrumb(breadcrumb, before)
     _clean_probe(traces, run_id)
-
-    if not produced:
-        detail = "hook produced no Trace for a probe run with a tool call"
-        if reason:
-            detail = f"{detail} — {reason}"
-        return Check(
-            name="hook round trip",
-            status="fail",
-            detail=detail,
-            fix=f"re-run `{command('adapter materialize')}`",
-        )
-    return Check("hook round trip", "pass", "probe event sequence produced a Trace")
+    if produced:
+        return None
+    detail = "hook produced no Trace for a probe run with a tool call"
+    return f"{detail} — {reason}" if reason else detail
 
 
 def _check_hook_events(workspace: Path) -> Check:

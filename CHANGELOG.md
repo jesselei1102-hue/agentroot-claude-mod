@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.0-rc.2 — kernel AgentRoot 0.5.0 (3d23ebb)
+
+- **Kernel: AgentRoot 0.5.0 at 3d23ebb** (three commits after the release; the version is unchanged).
+  - Every open session works from the same Memory: a session that has loaded the hot set is told, on its next prompt, which Facts another agent added, replaced or withdrew. The plugin reads `hot-set.last` as before; its format is unchanged.
+  - A Knowledge folder the harness may not list (a cloud-drive folder macOS keeps from it) is reported as permission denied, not empty.
+  - A Codex workspace no longer needs to be a git repository, and preflight runs the hook of every wired harness.
+
 ## 1.4.0-rc.1 — kernel AgentRoot 0.5.0 (c27880a)
 
 - **AgentRoot.** The product is now called AgentRoot, after the kernel's rename. The HUD, the command's replies, the toasts and the notes to the assistant say AgentRoot; the command is `/agentroot`, and `/agentzero` still works as its old name. The plugin id, the marketplace name and the saved state keep the name `agentzero`, so `/plugin install agentzero@agentzero` and existing installs carry on unchanged.

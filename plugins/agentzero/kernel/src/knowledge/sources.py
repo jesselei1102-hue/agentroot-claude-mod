@@ -10,6 +10,7 @@ the place, not the format, and ships no ingest pipeline.
 from __future__ import annotations
 
 import filecmp
+import os
 import shutil
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -56,6 +57,7 @@ class Added:
 class Reach:
     ok: bool
     detail: str
+    fix: str = "restore it, or correct its path in knowledge.yaml"
 
 
 def load_sources(workspace: Path, *, include_retired: bool = False) -> tuple[Source, ...]:
@@ -96,9 +98,30 @@ def reach(workspace: Path, source: Source) -> Reach:
     if not target.exists():
         return Reach(False, f"{source.path} does not exist on this machine")
     if target.is_dir():
-        count = sum(1 for item in target.rglob("*") if item.is_file() and item.name != ".gitkeep")
-        return Reach(count > 0, f"{count} file(s)" if count else "folder is empty")
+        count, denied = _count_files(target)
+        if count:
+            locked = f", {denied} folder(s) not readable" if denied else ""
+            return Reach(True, f"{count} file(s){locked}")
+        if denied:
+            # `rglob` drops a folder it may not list, so a cloud-drive folder macOS keeps
+            # from this harness used to read as empty and send the operator to restore it.
+            return Reach(
+                False,
+                f"{source.path} cannot be listed from here (permission denied)",
+                "give this harness access to the folder (macOS: System Settings → Privacy & "
+                "Security → Files and Folders), or copy it into the workspace",
+            )
+        return Reach(False, "folder is empty")
     return Reach(True, "file")
+
+
+def _count_files(folder: Path) -> tuple[int, int]:
+    """Files under `folder`, and how many folders in it refused a listing."""
+    denied: list[OSError] = []
+    count = 0
+    for _root, _dirs, files in os.walk(folder, onerror=denied.append):
+        count += sum(1 for name in files if name != ".gitkeep")
+    return count, len(denied)
 
 
 def add_source(
