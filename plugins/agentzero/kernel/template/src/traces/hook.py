@@ -97,8 +97,12 @@ def handle_event(payload: Mapping[str, Any], workspace_root: Path) -> Path | Non
     stop["work_files"] = work_files
     if not stop.get("timestamp"):
         stop["timestamp"] = datetime.now(UTC).isoformat()
+    session = payload.get("session_id") or payload.get("conversation_id")
     stop["loaded_memory_ids"] = _with_hot_set(
-        stop["loaded_memory_ids"], workspace_root, str(stop["timestamp"])
+        stop["loaded_memory_ids"],
+        workspace_root,
+        str(stop["timestamp"]),
+        session=str(session) if session else None,
     )
     destination = write_trace([*mcp_events, stop], workspace_root / "memory" / "traces")
     events_path.unlink(missing_ok=True)
@@ -198,13 +202,17 @@ def hook_output(payload: Mapping[str, Any], workspace_root: Path) -> dict[str, A
     Codex and Claude Code add a UserPromptSubmit hook's `additionalContext` to the turn.
     Cursor adds a beforeSubmitPrompt hook's `additional_context` (checked in 3.24.9); it
     was once told nothing, on the belief that this hook could only allow or block.
+
+    A shell event that ran `memory hot-set` is recorded as that session's load; it answers
+    nothing.
     """
     event = payload.get("hook_event_name")
+    session = payload.get("session_id") or payload.get("conversation_id")
     if event not in ("UserPromptSubmit", _PROMPT_EVENT):
+        _note_hot_set_load(payload, workspace_root, session)
         return {}
     from memory.runstate import prompt_reminder
 
-    session = payload.get("session_id") or payload.get("conversation_id")
     line = prompt_reminder(workspace_root, session=str(session) if session else None)
     if not line:
         return {}
@@ -213,6 +221,23 @@ def hook_output(payload: Mapping[str, Any], workspace_root: Path) -> dict[str, A
     return {
         "hookSpecificOutput": {"hookEventName": "UserPromptSubmit", "additionalContext": line}
     }
+
+
+_HOT_SET_COMMAND = re.compile(r"\bmemory\s+hot-set\b")
+
+
+def _note_hot_set_load(payload: Mapping[str, Any], workspace_root: Path, session: Any) -> None:
+    """The session ran the hot set: record it, since the command cannot know its session."""
+    if not session:
+        return
+    normalized = to_cursor_payload(payload)
+    if normalized.get("hook_event_name") != _SHELL_EVENT:
+        return
+    if not _HOT_SET_COMMAND.search(str(normalized.get("command") or "")):
+        return
+    from memory.runstate import note_session_load
+
+    note_session_load(workspace_root, str(session))
 
 
 def _root_from(payload: Mapping[str, Any]) -> Path:
@@ -317,7 +342,9 @@ def _record_loaded(meta: dict[str, Any], file_path: str, workspace_root: Path) -
         _append_id(meta, "loaded_memory_ids", path.stem)
 
 
-def _with_hot_set(loaded: Any, workspace_root: Path, timestamp: str) -> list[str]:
+def _with_hot_set(
+    loaded: Any, workspace_root: Path, timestamp: str, *, session: str | None = None
+) -> list[str]:
     """Add the Facts this session's hot set loaded; it arrives as command output, not a read."""
     from memory.runstate import hot_set_fact_ids
 
@@ -328,7 +355,7 @@ def _with_hot_set(loaded: Any, workspace_root: Path, timestamp: str) -> list[str
         return ids
     if at.tzinfo is None:
         at = at.astimezone()
-    for fact_id in hot_set_fact_ids(workspace_root / "memory", at=at):
+    for fact_id in hot_set_fact_ids(workspace_root / "memory", at=at, session=session):
         if fact_id not in ids:
             ids.append(fact_id)
     return ids

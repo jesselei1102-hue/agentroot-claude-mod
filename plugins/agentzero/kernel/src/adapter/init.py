@@ -40,7 +40,12 @@ def init_workspace(dest: Path, *, template: Path | None = None, harness: str = "
             return {name for name in names if name != ".gitkeep"}
         return set(common(folder, names))
 
-    for item in source.iterdir():
+    items = list(source.iterdir())
+    # Folders were copied through `ignore`, files at the top as they were — `.DS_Store` too.
+    skipped = common(str(source), [item.name for item in items])
+    for item in items:
+        if item.name in skipped:
+            continue
         target = dest / item.name
         if item.is_dir():
             shutil.copytree(item, target, dirs_exist_ok=True, ignore=ignore)

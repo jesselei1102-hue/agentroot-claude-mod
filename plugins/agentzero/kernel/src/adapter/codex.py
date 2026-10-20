@@ -24,13 +24,35 @@ Codex and Cursor read this file; Claude Code reads it through `CLAUDE.md`.
 
 """
 
-def _hook_command() -> str:
-    """Git-root resolution, since Codex may start from a subdirectory.
+HOOK_SCRIPT = ".codex/hooks/write-trace.py"
+_FIND_AND_RUN = (
+    "import runpy,sys;from pathlib import Path;"
+    "here=Path.cwd().resolve();"
+    f"hook=next((p/'{HOOK_SCRIPT}' for p in (here,*here.parents)"
+    f" if (p/'{HOOK_SCRIPT}').is_file()),None);"
+    "runpy.run_path(str(hook),run_name='__main__') if hook else"
+    f" (print('AgentRoot: no {HOOK_SCRIPT} in '+str(here)+' or above it',file=sys.stderr),"
+    "print('{}'))"
+)
+"""Walks up from where the session started to the nearest workspace and runs its hook.
 
-    Was hard-coded to `python3`, the one adapter that did not resolve per host
-    (SETTLED #38) — so it failed on a Windows host that has only `python`.
+No `$`, backtick, backslash or double quote, so sh, PowerShell and cmd all pass it
+through the double quotes unchanged.
+"""
+
+
+def _hook_command() -> str:
+    """Codex names no project directory, and may start from a subdirectory.
+
+    The command found its script through `$(git rev-parse --show-toplevel)`, so a
+    workspace that was not a git repository ran `/.codex/hooks/write-trace.py`
+    and no hook ever ran; inside another repository it reached that repository's
+    `.codex/`. Was hard-coded to `python3`, the one adapter that did not resolve
+    per host (SETTLED #38) — so it failed on a Windows host that has only `python`.
     """
-    return f'{interpreter()} "$(git rev-parse --show-toplevel)/.codex/hooks/write-trace.py"'
+    return f'{interpreter()} -c "{_FIND_AND_RUN}"'
+
+
 HOOK_EVENTS = (
     "UserPromptSubmit",
     "PreToolUse",

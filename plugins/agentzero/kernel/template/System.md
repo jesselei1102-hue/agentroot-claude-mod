@@ -16,7 +16,7 @@ Operating strategy for this workspace. Capability tiers stack (SETTLED #50): **T
    ./a0 memory hot-set --scope project --hints "<task keywords>"
    ```
 
-   Its output *is* this run's Memory: the active Facts valid now. Take hints from what the operator asked, and surface its `## Warnings`. If the command fails, read `memory/*.yaml` directly and say so. Only Facts carry across runs; query the rest on demand, never paste all of it. Reports and notes go under `work/`, never into Memory: one folder per topic for what the operator reads; what you made or checked it with goes in its `_agent/`; a repeated check replaces the last.
+   Its output *is* this run's Memory, with any change the prompt hook lists. Take hints from what the operator asked, and surface its `## Warnings`. If the command fails, read `memory/*.yaml` directly and say so. Only Facts carry across runs; query the rest on demand, never paste all of it. Reports and notes go under `work/`, never into Memory: one folder per topic for what the operator reads; what you made or checked it with goes in its `_agent/`; a repeated check replaces the last.
 
    | When | Run |
    |---|---|

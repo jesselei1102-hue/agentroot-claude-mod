@@ -491,7 +491,7 @@ def _check_knowledge(workspace: Path) -> list[Finding]:
                         "knowledge-source-unreachable",
                         source.id,
                         f"{state.detail}, so every run silently reads nothing from it",
-                        "restore it, or correct its path in knowledge.yaml",
+                        state.fix,
                     )
                 )
         parent = source.raw.get("derived_from")
