@@ -1,8 +1,8 @@
 {
-  "commit": "3d23ebb0debb117404921bcbe62565792b34b734",
-  "ref": "3d23ebb",
+  "commit": "38a6d02f8cc2e6ee6113031fb6b38b0d34ea5b9f",
+  "ref": "38a6d02",
   "version": "0.5.0",
-  "synced_at": "2026-10-20T08:54:04+00:00",
+  "synced_at": "2026-10-20T08:59:19+00:00",
   "files": {
     "LICENSE": "337042ef9636030cfb2f86b893390f3fed7c3223cfb18575f69d6a51a3b0f643",
     "pyproject.toml": "fa24cff4ddbafcc426fb23c76e2b72647d247568d18d7ed299695aef1499bed8",
